@@ -109,8 +109,10 @@ public final class Body {
 		// Far: walk on while turning. Close by: only small steps from (almost) standing, so it settles instead
 		// of sliding past the middle and turning round again.
 		Vec3 v = p.getDeltaMovement();
-		boolean slow = v.x * v.x + v.z * v.z < 0.0025;
-		boolean push = dist > 0.5 ? yawErr < 50f : (yawErr < 35f && slow);
+		double speed = Math.sqrt(v.x * v.x + v.z * v.z);
+		// Let go early enough to glide to a stop near the middle (ground friction keeps about half the speed each tick).
+		double glide = speed * 1.2;
+		boolean push = dist > glide + 0.1 && yawErr < (dist > 0.5 ? 50f : 35f);
 		mc.options.keyUp.setDown(push);
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
 		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
