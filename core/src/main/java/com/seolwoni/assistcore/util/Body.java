@@ -91,7 +91,7 @@ public final class Body {
 		double dx = target.x - pos.x, dz = target.z - pos.z;
 		double dist = Math.sqrt(dx * dx + dz * dz);
 		double dyFeet = feet.getY() - pos.y;
-		boolean arrived = dist < 0.22 && Math.abs(dyFeet) < 0.6;
+		boolean arrived = dist < 0.25 && Math.abs(dyFeet) < 0.6;
 		if (arrived) {
 			release(mc);
 			return true;
@@ -106,10 +106,11 @@ public final class Body {
 		turnTo(p, yaw, pitch, 1f);
 		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
 		// Ease off: only push forward while facing roughly the right way, and tap it when very close.
-		// Close by: tap forward, and always give a little push when standing still so it never stalls short.
+		// Far: walk on while turning. Close by: only small steps from (almost) standing, so it settles instead
+		// of sliding past the middle and turning round again.
 		Vec3 v = p.getDeltaMovement();
-		boolean still = v.x * v.x + v.z * v.z < 0.0009;
-		boolean push = yawErr < 35f && (dist > 0.5 || walkTicks % 2 == 0 || still);
+		boolean slow = v.x * v.x + v.z * v.z < 0.0025;
+		boolean push = dist > 0.5 ? yawErr < 50f : (yawErr < 35f && slow);
 		mc.options.keyUp.setDown(push);
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
 		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
@@ -149,7 +150,8 @@ public final class Body {
 		float pitch = Math.max(-10f, Math.min(30f, p.getXRot()));
 		turnTo(p, yaw, pitch, 1f);
 		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
-		mc.options.keyUp.setDown(yawErr < 45f);
+		// Keep walking while turning a corner, like a person does (only stop for a sharp turn).
+		mc.options.keyUp.setDown(yawErr < 75f);
 		boolean run = sprint && yawErr < 20f && p.getFoodData().getFoodLevel() > 6;
 		mc.options.keySprint.setDown(run);
 		if (!run && p.isSprinting()) p.setSprinting(false);
