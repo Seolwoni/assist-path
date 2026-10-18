@@ -153,7 +153,8 @@ public final class Body {
 		turnTo(p, yaw, pitch, 1f);
 		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
 		// Keep walking while turning a corner, like a person does (only stop for a sharp turn).
-		mc.options.keyUp.setDown(yawErr < 75f);
+		// (close to the cell only when facing it, or it would circle round it).
+		mc.options.keyUp.setDown(yawErr < (dist > 2.0 ? 75f : dist > 1.0 ? 45f : 30f));
 		boolean run = sprint && yawErr < 20f && p.getFoodData().getFoodLevel() > 6;
 		mc.options.keySprint.setDown(run);
 		if (!run && p.isSprinting()) p.setSprinting(false);
