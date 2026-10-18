@@ -20,11 +20,17 @@ import net.minecraft.world.phys.Vec3;
  */
 public class RouteWalkAction implements Action {
 	private final List<BlockPos> route;
-	private int idx, onCell, pre = -1, post = -1;
+	private int idx, onCell, pre = -1, post = -1, lookTicks, nextGlance;
 	private Set<BlockPos> cellSet;
 
 	public RouteWalkAction(List<BlockPos> route) {
 		this.route = route;
+	}
+
+	/** Ticks of walking until the next glance (more often when relaxed). */
+	private static int glanceGap() {
+		double l = Human.liveliness();
+		return (int) (Human.rand(120, 320) / l);
 	}
 
 	/** Index of the cell being walked to (where a fallback should pick up after a failure). */
@@ -106,10 +112,20 @@ public class RouteWalkAction implements Action {
 			pre = Human.delay(0, 4);
 			Body.resetWalk();
 			Body.newTurn();
+			Body.stopGlance();
+			nextGlance = glanceGap();
 		}
-		if (pre-- > 0) return RUN;
+		if (lookTicks >= 0) {
+			// Look where the way goes before setting off (a few cells ahead, eyes a bit down), at most a moment.
+			BlockPos ahead = route.get(Math.min(route.size() - 1, idx + 3));
+			Vec3 at = new Vec3(ahead.getX() + 0.5, ahead.getY() + 0.6, ahead.getZ() + 0.5);
+			boolean faced = p.position().distanceToSqr(at) < 2.5 || Body.lookAt(p, at, 6f);
+			if ((pre-- > 0 || !faced) && lookTicks++ < 14) return RUN;
+			lookTicks = -1;
+		}
 		if (post >= 0) return post-- <= 0 ? DONE : RUN;
 		if (idx >= route.size() - 1) {
+			Body.stopGlance();
 			// Last cell: arrive properly.
 			if (Body.walkTo(p, route.get(route.size() - 1))) {
 				Body.release(mc);
@@ -117,7 +133,20 @@ public class RouteWalkAction implements Action {
 				return RUN;
 			}
 		} else {
-			boolean sprint = Human.pace >= 1 && straightAhead(idx) >= 3;
+			int straight = straightAhead(idx);
+			boolean sprint = Human.pace >= 1 && straight >= 3;
+			// Now and then glance aside, up or down on a straight, level stretch, walking on meanwhile.
+			if (--nextGlance <= 0 && !Body.glancing()) {
+				nextGlance = glanceGap();
+				if (straight >= 4 && p.onGround() && !p.isInWater()) {
+					float side = (float) ((6 + Human.RANDOM.nextDouble() * 8) * (Human.RANDOM.nextBoolean() ? 1 : -1));
+					double r = Human.RANDOM.nextDouble();
+					float pitch = r < 0.4 ? (float) (-20 + Human.RANDOM.nextDouble() * 12) // up
+							: r < 0.75 ? (float) (35 + Human.RANDOM.nextDouble() * 15) // down at the ground
+							: (float) (Human.RANDOM.nextDouble() * 10); // level, just aside
+					Body.glance(side, pitch, Human.rand(8, 18));
+				}
+			}
 			if (Body.walkThrough(p, route.get(idx), route.get(idx + 1), sprint)) {
 				idx++;
 				onCell = 0;
