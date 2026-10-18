@@ -1,0 +1,10 @@
+net.minecraft.world.level.block.CropBlock
+net.minecraft.world.level.block.NetherWartBlock
+net.minecraft.world.level.block.CocoaBlock
+net.minecraft.world.level.block.SweetBerryBushBlock
+net.minecraft.world.level.block.SugarCaneBlock
+net.minecraft.world.level.block.BambooStalkBlock
+net.minecraft.world.level.block.CactusBlock
+net.minecraft.world.level.block.HorizontalDirectionalBlock
+net.minecraft.world.InteractionResult
+net.minecraft.client.player.LocalPlayer

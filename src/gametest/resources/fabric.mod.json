@@ -1,0 +1,13 @@
+{
+	"schemaVersion": 1,
+	"id": "assistpath-gametest",
+	"version": "1.0.0",
+	"name": "Assist Path Game Tests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": ["com.seolwoni.assistpath.gametest.PathGameTest"]
+	},
+	"depends": {
+		"assistpath": "*"
+	}
+}
