@@ -106,7 +106,10 @@ public final class Body {
 		turnTo(p, yaw, pitch, 1f);
 		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
 		// Ease off: only push forward while facing roughly the right way, and tap it when very close.
-		boolean push = yawErr < 35f && (dist > 0.5 || walkTicks % 2 == 0);
+		// Close by: tap forward, and always give a little push when standing still so it never stalls short.
+		Vec3 v = p.getDeltaMovement();
+		boolean still = v.x * v.x + v.z * v.z < 0.0009;
+		boolean push = yawErr < 35f && (dist > 0.5 || walkTicks % 2 == 0 || still);
 		mc.options.keyUp.setDown(push);
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
 		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
