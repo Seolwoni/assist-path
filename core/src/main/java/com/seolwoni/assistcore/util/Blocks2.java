@@ -64,4 +64,21 @@ public final class Blocks2 {
 		BlockState s = state(p);
 		return s.getBlock() instanceof net.minecraft.world.level.block.FallingBlock;
 	}
+
+	/** Nothing to bump into or get hurt by at {@code p} (crops and grass are fine, fire, berry bushes and cobwebs are not). */
+	public static boolean passable(BlockPos p) {
+		BlockState s = state(p);
+		if (!s.getFluidState().isEmpty()) return false;
+		if (s.is(net.minecraft.tags.BlockTags.FIRE) || s.is(Blocks.SWEET_BERRY_BUSH) || s.is(Blocks.COBWEB) || s.is(Blocks.POWDER_SNOW)) return false;
+		return s.getCollisionShape(level(), p).isEmpty();
+	}
+
+	/** A cell a player can simply walk across: room for feet and head, and something safe to stand on. */
+	public static boolean walkable(BlockPos p) {
+		if (!passable(p) || !passable(p.above())) return false;
+		BlockPos f = p.below();
+		BlockState s = state(f);
+		if (!s.getFluidState().isEmpty() || s.is(Blocks.MAGMA_BLOCK) || s.is(Blocks.CAMPFIRE) || s.is(Blocks.SOUL_CAMPFIRE)) return false;
+		return !s.getCollisionShape(level(), f).isEmpty();
+	}
 }

@@ -1,13 +1,18 @@
 package com.seolwoni.assistcore.engine;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.seolwoni.assistcore.util.Blocks2;
 import com.seolwoni.assistcore.util.Body;
 import com.seolwoni.assistcore.util.Human;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Walks a list of cells in one smooth go: no stop at every cell, runs on straight stretches (unless the
@@ -16,6 +21,7 @@ import net.minecraft.core.BlockPos;
 public class RouteWalkAction implements Action {
 	private final List<BlockPos> route;
 	private int idx, onCell, pre = -1, post = -1;
+	private Set<BlockPos> cellSet;
 
 	public RouteWalkAction(List<BlockPos> route) {
 		this.route = route;
@@ -45,9 +51,57 @@ public class RouteWalkAction implements Action {
 		return sy == 0 ? n : 0;
 	}
 
+	/**
+	 * Cut corners like a person: on level ground, head straight for the farthest route cell that can be reached
+	 * in a straight line (the strip the player's body sweeps stays on walkable cells), instead of zig-zagging
+	 * from cell to cell.
+	 */
+	private int farthestInSight(LocalPlayer p) {
+		BlockPos here = route.get(idx);
+		int y = here.getY();
+		if (Math.abs(p.getY() - y) > 0.3 || !p.onGround()) return idx;
+		Vec3 from = p.position();
+		int best = idx;
+		for (int k = idx + 1; k < Math.min(route.size(), idx + 12); k++) {
+			BlockPos c = route.get(k);
+			if (c.getY() != y) break;
+			if (!lineClear(from, c, y)) break;
+			best = k;
+		}
+		return best;
+	}
+
+	private boolean lineClear(Vec3 from, BlockPos to, int y) {
+		double tx = to.getX() + 0.5, tz = to.getZ() + 0.5;
+		double dx = tx - from.x, dz = tz - from.z;
+		double len = Math.sqrt(dx * dx + dz * dz);
+		if (len < 0.01) return true;
+		double px = -dz / len * 0.32, pz = dx / len * 0.32;
+		int steps = (int) Math.ceil(len / 0.2);
+		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+		for (int i = 0; i <= steps; i++) {
+			double t = (double) i / steps;
+			double x = from.x + dx * t, z = from.z + dz * t;
+			for (int side = -1; side <= 1; side++) {
+				m.set(Mth.floor(x + px * side), y, Mth.floor(z + pz * side));
+				if (cellSet.contains(m)) continue;
+				if (!Blocks2.walkable(m)) return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	public int tick(Minecraft mc, LocalPlayer p) {
 		if (route.isEmpty()) return DONE;
+		if (cellSet == null) cellSet = new HashSet<>(route);
+		if (idx < route.size() - 1) {
+			int k = farthestInSight(p);
+			if (k > idx) {
+				idx = k;
+				onCell = 0;
+			}
+		}
 		if (pre < 0) {
 			pre = Human.delay(0, 4);
 			Body.resetWalk();

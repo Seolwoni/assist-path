@@ -91,7 +91,11 @@ public final class PathWalker {
 		return replans;
 	}
 
+	private boolean counted;
+
 	private int fail(Minecraft mc, String why) {
+		AssistPath.Stats.gaveUp++;
+		AssistPath.Stats.reasons.merge(why, 1, Integer::sum);
 		Body.release(mc);
 		if (plan != null) plan.cancel(false);
 		plan = null;
@@ -120,11 +124,16 @@ public final class PathWalker {
 	}
 
 	public int tick(Minecraft mc, LocalPlayer p) {
+		if (!counted) {
+			counted = true;
+			AssistPath.Stats.walks++;
+		}
 		if (walk == null) {
 			if (plan == null) {
 				BlockPos from = feet(p);
 				if (goal.isInGoal(from) && (cells != null || replans > 0)) {
 					Body.release(mc);
+					AssistPath.Stats.arrived++;
 					return Action.DONE;
 				}
 				plan = AssistPath.plan(p, mc.level, from, goal, options, PRIMARY_MS, FAIL_MS);
@@ -133,6 +142,7 @@ public final class PathWalker {
 			}
 			if (!plan.isDone()) {
 				// Planning: stand still for a moment, like someone looking where to go.
+				AssistPath.Stats.waitTicks++;
 				if (++planTicks > PLAN_WAIT_TICKS) return fail(mc, "길을 찾는 데 너무 오래 걸려요");
 				return Action.RUN;
 			}
@@ -169,10 +179,12 @@ public final class PathWalker {
 				return fail(mc, "길이 계속 막혀요");
 			}
 		}
+		AssistPath.Stats.walkTicks++;
 		int r = walk.tick(mc, p);
 		if (r == Action.DONE) {
 			if (!partial && goal.isInGoal(feet(p))) {
 				walk = null;
+				AssistPath.Stats.arrived++;
 				return Action.DONE;
 			}
 			// Only part of the way (or slipped off the goal): plan the rest from here.
