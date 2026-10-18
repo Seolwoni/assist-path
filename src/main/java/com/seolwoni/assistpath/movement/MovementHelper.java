@@ -56,7 +56,7 @@ import static com.seolwoni.assistpath.precompute.Ternary.*;
  *
  * @author leijurv
  */
-public interface MovementHelper extends ActionCosts, Helper {
+public interface MovementHelper extends ActionCosts {
 
     static boolean avoidBreaking(BlockStateInterface bsi, int x, int y, int z, BlockState state) {
         if (!bsi.worldBorder.canPlaceAt(x, z)) {

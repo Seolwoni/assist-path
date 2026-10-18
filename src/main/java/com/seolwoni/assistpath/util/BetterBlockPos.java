@@ -17,7 +17,6 @@
 
 package com.seolwoni.assistpath.util;
 
-import javax.annotation.Nonnull;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -225,7 +224,6 @@ public final class BetterBlockPos extends BlockPos {
     }
 
     @Override
-    @Nonnull
     public String toString() {
         return String.format(
                 "BetterBlockPos{x=%s,y=%s,z=%s}",
