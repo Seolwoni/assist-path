@@ -1,0 +1,148 @@
+package com.seolwoni.assistcore.util;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+
+/** Smooth, human-looking looking and walking. */
+public final class Body {
+	private static float turnSpeed = 18f;
+	private static int walkTicks;
+
+	private Body() {
+	}
+
+	private static float wrap(float d) {
+		d %= 360f;
+		if (d >= 180f) d -= 360f;
+		if (d < -180f) d += 360f;
+		return d;
+	}
+
+	public static float yawTo(LocalPlayer p, Vec3 t) {
+		Vec3 e = p.getEyePosition();
+		return (float) (Math.toDegrees(Math.atan2(t.z - e.z, t.x - e.x)) - 90.0);
+	}
+
+	public static float pitchTo(LocalPlayer p, Vec3 t) {
+		Vec3 e = p.getEyePosition();
+		double dx = t.x - e.x, dy = t.y - e.y, dz = t.z - e.z;
+		return (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+	}
+
+	/** Start a new turn: picks a fresh top speed so every movement looks a little different. */
+	public static void newTurn() {
+		turnSpeed = (7f + Human.RANDOM.nextFloat() * 7f) * Human.turnScale();
+	}
+
+	/** Current angular speed in degrees per tick. Kept between targets so the head never jerks. */
+	private static float vel;
+
+	/**
+	 * Turns towards yaw/pitch like a hand on a mouse: speeds up, cruises, then eases in.
+	 * The speed carries over from the previous turn instead of snapping. Returns true once within
+	 * {@code tolerance} degrees.
+	 */
+	public static boolean turnTo(LocalPlayer p, float yaw, float pitch, float tolerance) {
+		float dy = wrap(yaw - p.getYRot());
+		float dp = pitch - p.getXRot();
+		float dist = (float) Math.sqrt(dy * dy + dp * dp);
+		if (dist <= tolerance) {
+			vel *= 0.5f;
+			return true;
+		}
+		float accel = Math.max(0.6f, turnSpeed * 0.3f);
+		// The fastest speed that can still slow down in time for the target.
+		float want = Math.min(turnSpeed, (float) Math.sqrt(2f * accel * dist));
+		want = Math.max(want, 0.6f);
+		if (vel < want) vel = Math.min(want, vel + accel);
+		else vel = Math.max(want, vel - accel * 1.5f);
+		float step = Math.min(vel, dist);
+		float f = step / dist;
+		p.setYRot(p.getYRot() + dy * f);
+		p.setXRot(Math.max(-90f, Math.min(90f, p.getXRot() + dp * f)));
+		return dist - step <= tolerance;
+	}
+
+	public static boolean lookAt(LocalPlayer p, Vec3 t, float tolerance) {
+		return turnTo(p, yawTo(p, t), pitchTo(p, t), tolerance);
+	}
+
+	// ------------------------------------------------------------------ walking
+
+	public static void resetWalk() {
+		walkTicks = 0;
+	}
+
+	public static int walkTicks() {
+		return walkTicks;
+	}
+
+	/**
+	 * Walks to the centre of the given feet position. Returns true when arrived.
+	 * Looks where it is going with a relaxed downward pitch, and eases off near the target.
+	 */
+	public static boolean walkTo(LocalPlayer p, BlockPos feet) {
+		Minecraft mc = Minecraft.getInstance();
+		walkTicks++;
+		Vec3 target = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+		Vec3 pos = p.position();
+		double dx = target.x - pos.x, dz = target.z - pos.z;
+		double dist = Math.sqrt(dx * dx + dz * dz);
+		double dyFeet = feet.getY() - pos.y;
+		boolean arrived = dist < 0.22 && Math.abs(dyFeet) < 0.6;
+		if (arrived) {
+			release(mc);
+			return true;
+		}
+		float yaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
+		// Keep the head roughly where it is while walking, only easing out of extreme angles.
+		float pitch = Math.max(-10f, Math.min(35f, p.getXRot()));
+		turnTo(p, yaw, pitch, 1f);
+		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
+		// Ease off: only push forward while facing roughly the right way, and tap it when very close.
+		boolean push = yawErr < 35f && (dist > 0.5 || walkTicks % 2 == 0);
+		mc.options.keyUp.setDown(push);
+		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
+		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
+		return false;
+	}
+
+	/**
+	 * Walks through {@code cell} on the way to {@code next} without stopping: aims a little ahead, keeps
+	 * the forward key down and jumps up steps. Returns true once {@code cell} has been passed.
+	 */
+	public static boolean walkThrough(LocalPlayer p, BlockPos cell, BlockPos next, boolean sprint) {
+		Minecraft mc = Minecraft.getInstance();
+		walkTicks++;
+		Vec3 pos = p.position();
+		double cx = cell.getX() + 0.5, cz = cell.getZ() + 0.5;
+		double dist = Math.sqrt((cx - pos.x) * (cx - pos.x) + (cz - pos.z) * (cz - pos.z));
+		double dyFeet = cell.getY() - pos.y;
+		if (dist < 0.55 && Math.abs(dyFeet) < 0.6) return true;
+		// Look ahead: once close, already steer between this cell and the next one.
+		double tx = cx, tz = cz;
+		if (dist < 1.1) {
+			tx = (cx + next.getX() + 0.5) / 2;
+			tz = (cz + next.getZ() + 0.5) / 2;
+		}
+		float yaw = (float) (Math.toDegrees(Math.atan2(tz - pos.z, tx - pos.x)) - 90.0);
+		float pitch = Math.max(-10f, Math.min(30f, p.getXRot()));
+		turnTo(p, yaw, pitch, 1f);
+		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
+		mc.options.keyUp.setDown(yawErr < 45f);
+		mc.options.keySprint.setDown(sprint && yawErr < 20f && p.getFoodData().getFoodLevel() > 6);
+		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
+		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
+		return false;
+	}
+
+	public static void release(Minecraft mc) {
+		mc.options.keyUp.setDown(false);
+		mc.options.keyJump.setDown(false);
+		mc.options.keyAttack.setDown(false);
+		mc.options.keySprint.setDown(false);
+		if (mc.player != null) mc.player.setSprinting(false);
+	}
+}

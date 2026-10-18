@@ -102,6 +102,9 @@ public class MovementDescend extends Movement {
         if (destDown.getBlock() == Blocks.LADDER || destDown.getBlock() == Blocks.VINE) {
             return;
         }
+        if (below.getBlock() == Blocks.FARMLAND) {
+            return; // Assist Path: dropping onto farmland can trample it
+        }
         if (MovementHelper.canUseFrostWalker(context, destDown)) { // no need to check assumeWalkOnWater
             return; // the water will freeze when we try to walk into it
         }
@@ -184,6 +187,9 @@ public class MovementDescend extends Movement {
             }
             if (!MovementHelper.canWalkOn(context, destX, newY, destZ, ontoBlock)) {
                 return false;
+            }
+            if (ontoBlock.getBlock() == Blocks.FARMLAND) {
+                return false; // Assist Path: falling onto farmland tramples it
             }
             if (MovementHelper.isBottomSlab(ontoBlock)) {
                 return false; // falling onto a half slab is really glitchy, and can cause more fall damage than we'd expect

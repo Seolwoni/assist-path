@@ -3,7 +3,7 @@
 	"id": "assistpath",
 	"version": "${version}",
 	"name": "Assist Path",
-	"description": "Assist 시리즈의 길찾기 모듈. Baritone의 A* 길찾기와 이동 비용 계산을 바탕으로 경로를 계획하고, 실제 움직임은 Assist Core가 사람처럼 해요. Made by seolwoni. Based on Baritone (cabaletta/baritone), LGPL-3.0.",
+	"description": "Assist 시리즈의 길찾기 모듈. Baritone의 A* 길찾기와 이동 비용 계산을 바탕으로 경로를 계획하고(별도 스레드), Assist Core의 걷기로 사람처럼 따라가요. Made by seolwoni. Based on Baritone (cabaletta/baritone), LGPL-3.0.",
 	"authors": ["seolwoni"],
 	"contributors": ["Baritone authors (leijurv, Brady and contributors)"],
 	"license": "LGPL-3.0-or-later",
@@ -22,6 +22,7 @@
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~26.2",
 		"java": ">=25",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"assistcore": ">=1.4.0"
 	}
 }

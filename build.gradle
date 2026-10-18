@@ -13,6 +13,9 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	// Assist Core walks the planned routes like a person (bundled, jar-in-jar).
+	implementation project(':core')
+	include project(':core')
 }
 
 processResources {

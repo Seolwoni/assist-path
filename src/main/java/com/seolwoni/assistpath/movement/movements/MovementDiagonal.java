@@ -89,7 +89,7 @@ public class MovementDiagonal extends Movement {
             frostWalker = standingOnABlock && MovementHelper.canUseFrostWalker(context, destWalkOn);
             if (!frostWalker && !MovementHelper.canWalkOn(context, destX, y - 1, destZ, destWalkOn)) {
                 descend = true;
-                if (!context.allowDiagonalDescend || !MovementHelper.canWalkOn(context, destX, y - 2, destZ) || !MovementHelper.canWalkThrough(context, destX, y - 1, destZ, destWalkOn)) {
+                if (!context.allowDiagonalDescend || !MovementHelper.canWalkOn(context, destX, y - 2, destZ) || context.get(destX, y - 2, destZ).getBlock() == Blocks.FARMLAND || !MovementHelper.canWalkThrough(context, destX, y - 1, destZ, destWalkOn)) {
                     return;
                 }
             }

@@ -89,20 +89,25 @@ public class CalculationContext {
     }
 
     public CalculationContext(LocalPlayer player, Level world, boolean forUseOnAnotherThread) {
+        this(player, world, forUseOnAnotherThread, com.seolwoni.assistpath.PathOptions.FULL);
+    }
+
+    /** Assist Path: the route options decide breaking, placing and parkour (on top of the settings). */
+    public CalculationContext(LocalPlayer player, Level world, boolean forUseOnAnotherThread, com.seolwoni.assistpath.PathOptions options) {
         this.precomputedData = new PrecomputedData();
         this.safeForThreadedUse = forUseOnAnotherThread;
         this.player = player;
         this.world = world;
         this.bsi = new BlockStateInterface(world, forUseOnAnotherThread);
         this.toolSet = new ToolSet(player);
-        this.hasThrowaway = PathSettings.get().allowPlace.value && hasThrowawayBlocks(player);
+        this.hasThrowaway = options.allowPlace() && PathSettings.get().allowPlace.value && hasThrowawayBlocks(player);
         this.hasWaterBucket = PathSettings.get().allowWaterBucketFall.value && Inventory.isHotbarSlot(player.getInventory().findSlotMatchingItem(STACK_BUCKET_WATER)) && world.dimension() != Level.NETHER;
         this.canSprint = PathSettings.get().allowSprint.value && player.getFoodData().getFoodLevel() > 6;
         this.placeBlockCost = PathSettings.get().blockPlacementPenalty.value;
-        this.allowBreak = PathSettings.get().allowBreak.value;
+        this.allowBreak = options.allowBreak() && PathSettings.get().allowBreak.value;
         this.allowBreakAnyway = new ArrayList<>(PathSettings.get().allowBreakAnyway.value);
-        this.allowParkour = PathSettings.get().allowParkour.value;
-        this.allowParkourPlace = PathSettings.get().allowParkourPlace.value;
+        this.allowParkour = options.allowParkour() || PathSettings.get().allowParkour.value;
+        this.allowParkourPlace = options.allowPlace() && PathSettings.get().allowParkourPlace.value;
         this.allowJumpAtBuildLimit = PathSettings.get().allowJumpAtBuildLimit.value;
         this.allowParkourAscend = PathSettings.get().allowParkourAscend.value;
         this.assumeWalkOnWater = PathSettings.get().assumeWalkOnWater.value;

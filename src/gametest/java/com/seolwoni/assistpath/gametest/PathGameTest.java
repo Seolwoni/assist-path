@@ -10,6 +10,8 @@ import com.seolwoni.assistpath.AssistPath;
 import com.seolwoni.assistpath.AssistPath.Route;
 import com.seolwoni.assistpath.AssistPath.Step;
 import com.seolwoni.assistpath.goals.GoalBlock;
+import com.seolwoni.assistpath.walk.PathWalker;
+import com.seolwoni.assistcore.engine.Action;
 
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -21,6 +23,8 @@ import net.minecraft.world.level.block.Blocks;
 /**
  * Plans routes through prepared terrain (one lane per case, all on stone at y 100):
  * flat, a wall to go around, steps up a hill, a lava pool to avoid, a walled room to dig out of, a drop down.
+ * Then walks some of them for real with {@link PathWalker} (planning on its own thread), plus a water channel
+ * to swim across and a wheat field that must not be trampled.
  */
 public class PathGameTest implements FabricClientGameTest {
 	private final List<String> log = new ArrayList<>();
@@ -84,6 +88,7 @@ public class PathGameTest implements FabricClientGameTest {
 					}
 				}
 			}
+			walkCases(context, sp);
 		} catch (Throwable t) {
 			failures.add("exception: " + t);
 			throw t;
@@ -93,16 +98,67 @@ public class PathGameTest implements FabricClientGameTest {
 		if (!failures.isEmpty()) throw new AssertionError("Assist Path test failed: " + String.join("; ", failures));
 	}
 
+	private record Walk(String name, BlockPos start, BlockPos goal, int limit) {
+	}
+
+	private void walkCases(ClientGameTestContext context, TestSingleplayerContext sp) {
+		List<Walk> walks = List.of(
+				new Walk("walk flat", new BlockPos(0, 101, 0), new BlockPos(0, 101, 20), 400),
+				new Walk("walk around wall", new BlockPos(8, 101, 0), new BlockPos(8, 101, 20), 500),
+				new Walk("walk up hill", new BlockPos(16, 101, 0), new BlockPos(16, 105, 20), 500),
+				new Walk("walk drop down", new BlockPos(40, 101, 0), new BlockPos(40, 98, 20), 500),
+				new Walk("swim across water", new BlockPos(48, 101, 0), new BlockPos(48, 101, 20), 700),
+				new Walk("wheat field (no trample)", new BlockPos(56, 102, 0), new BlockPos(56, 101, 18), 600));
+		int farmBefore = countFarmland(context);
+		long worstStartMs = 0;
+		for (Walk w : walks) {
+			cmd(sp, "tp @a " + (w.start().getX() + 0.5) + " " + w.start().getY() + " " + (w.start().getZ() + 0.5) + " 0 20");
+			context.waitTicks(15);
+			PathWalker walker = new PathWalker(new GoalBlock(w.goal()));
+			int result = Action.RUN, ticks = 0;
+			long maxTickMs = 0;
+			while (result == Action.RUN && ticks < w.limit()) {
+				long t0 = System.nanoTime();
+				result = context.computeOnClient(mc -> walker.tick(mc, mc.player));
+				long ms = (System.nanoTime() - t0) / 1_000_000;
+				if (ms > maxTickMs) maxTickMs = ms;
+				context.waitTicks(1);
+				ticks++;
+			}
+			final int res = result;
+			context.runOnClient(mc -> com.seolwoni.assistcore.util.Body.release(mc));
+			BlockPos at = context.computeOnClient(mc -> PathWalker.feet(mc.player));
+			worstStartMs = Math.max(worstStartMs, maxTickMs);
+			log.add(String.format("%-26s %s in %d ticks, at %s, replans=%d, slowest tick %dms, last plan %dms",
+					w.name(), res == Action.DONE ? "ARRIVED" : res == Action.FAIL ? "FAILED (" + walker.failReason() + ")" : "TIMEOUT",
+					ticks, at.toShortString(), walker.replans(), maxTickMs, AssistPath.Stats.lastMillis));
+			if (res != Action.DONE || at.distManhattan(w.goal()) > 1) failures.add(w.name() + ": did not arrive (" + at.toShortString() + ")");
+		}
+		int farmAfter = countFarmland(context);
+		log.add("farmland before " + farmBefore + ", after " + farmAfter + "; planner max " + AssistPath.Stats.maxMillis + "ms over "
+				+ AssistPath.Stats.plans + " plans; slowest walker tick " + worstStartMs + "ms");
+		if (farmAfter < farmBefore) failures.add("trampled " + (farmBefore - farmAfter) + " farmland");
+		if (worstStartMs > 50) failures.add("a walker tick took " + worstStartMs + "ms (planning should not hold up the game)");
+	}
+
+	private static int countFarmland(ClientGameTestContext context) {
+		return context.computeOnClient(mc -> {
+			int n = 0;
+			for (int x = 54; x <= 58; x++) for (int z = 10; z <= 20; z++) if (mc.level.getBlockState(new BlockPos(x, 100, z)).is(Blocks.FARMLAND)) n++;
+			return n;
+		});
+	}
+
 	private static void cmd(TestSingleplayerContext sp, String c) {
 		sp.getServer().runCommand(c);
 	}
 
 	private void build(TestSingleplayerContext sp) {
-		cmd(sp, "forceload add -8 -8 56 32");
+		cmd(sp, "forceload add -8 -8 66 32");
 		cmd(sp, "difficulty peaceful");
 		cmd(sp, "time set noon");
-		cmd(sp, "fill -6 90 -6 50 100 30 minecraft:stone");
-		cmd(sp, "fill -6 101 -6 50 120 30 minecraft:air");
+		cmd(sp, "fill -6 90 -6 62 100 30 minecraft:stone");
+		cmd(sp, "fill -6 101 -6 62 120 30 minecraft:air");
 		// wall: 3 high across the lane, open at the sides
 		cmd(sp, "fill 6 101 10 10 103 10 minecraft:stone");
 		// hill: steps up to y 104 (stand at 105)
@@ -118,6 +174,18 @@ public class PathGameTest implements FabricClientGameTest {
 		cmd(sp, "fill 31 101 -1 33 102 1 minecraft:air");
 		// drop: the floor after z 10 is 3 lower
 		cmd(sp, "fill 38 98 10 42 100 30 minecraft:air");
+		// water: a 1-deep channel across lane 48, walled on both sides so the only way is to swim
+		cmd(sp, "fill 43 101 -6 43 103 30 minecraft:stone");
+		cmd(sp, "fill 53 101 -6 53 103 30 minecraft:stone");
+		cmd(sp, "fill 44 100 10 52 100 12 minecraft:water");
+		// wheat field in lane 56: high ground (stand at 102) until z 9, then farmland with wheat; one stone step
+		// down at x 58 so the way in never drops onto farmland
+		cmd(sp, "fill 59 101 -6 59 103 30 minecraft:stone");
+		cmd(sp, "fill 54 101 -6 58 101 9 minecraft:stone");
+		cmd(sp, "fill 54 100 10 58 100 20 minecraft:farmland");
+		cmd(sp, "fill 54 101 10 58 101 20 minecraft:wheat");
+		cmd(sp, "fill 58 100 10 58 100 10 minecraft:stone");
+		cmd(sp, "fill 58 101 10 58 101 10 minecraft:air");
 		cmd(sp, "gamemode survival @a");
 		cmd(sp, "clear @a");
 		cmd(sp, "give @a minecraft:iron_pickaxe");

@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"id": "assistcore",
+	"version": "${version}",
+	"name": "Assist Core",
+	"description": "Assist 시리즈(Reel, Mine, Farm, Lumber Assist)가 같이 쓰는 기반 라이브러리. 사람 같은 움직임, 작업 엔진, 상자 보관, HUD, 설정 화면 부품. Made by seolwoni",
+	"authors": ["seolwoni"],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/assistcore/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.seolwoni.assistcore.AssistCore"]
+	},
+	"custom": {
+		"modmenu": { "badges": ["library"] }
+	},
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
