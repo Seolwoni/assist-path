@@ -124,7 +124,7 @@ public class PathGameTest implements FabricClientGameTest {
 				if (ms > maxTickMs) maxTickMs = ms;
 				context.waitTicks(1);
 				ticks++;
-				if (ticks % 40 == 0 || (ticks > 60 && ticks % 5 == 0 && w.name().startsWith("walk drop"))) {
+				if (ticks % 40 == 0) {
 					String at = context.computeOnClient(mc -> String.format("%.2f %.2f %.2f sprint=%s up=%s yaw=%.0f vel=%.3f,%.3f ground=%s", mc.player.getX(), mc.player.getY(), mc.player.getZ(), mc.player.isSprinting(),
 							mc.options.keyUp.isDown(), mc.player.getYRot(), mc.player.getDeltaMovement().x, mc.player.getDeltaMovement().z, mc.player.onGround()));
 					List<BlockPos> cs = walker.cells();
