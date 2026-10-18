@@ -81,4 +81,30 @@ public final class Blocks2 {
 		if (!s.getFluidState().isEmpty() || s.is(Blocks.MAGMA_BLOCK) || s.is(Blocks.CAMPFIRE) || s.is(Blocks.SOUL_CAMPFIRE)) return false;
 		return !s.getCollisionShape(level(), f).isEmpty();
 	}
+
+	/**
+	 * True if the player can walk from {@code from} straight to the middle of {@code to} on level ground: every
+	 * cell the body sweeps on the way is {@link #walkable}. Then there is no need to plan a route.
+	 */
+	public static boolean lineWalkable(net.minecraft.world.phys.Vec3 from, BlockPos to) {
+		int y = to.getY();
+		if (Math.abs(from.y - y) > 0.3) return false;
+		double dx = to.getX() + 0.5 - from.x, dz = to.getZ() + 0.5 - from.z;
+		double len = Math.sqrt(dx * dx + dz * dz);
+		if (len < 0.01) return true;
+		double px = -dz / len * 0.32, pz = dx / len * 0.32;
+		int steps = (int) Math.ceil(len / 0.2);
+		BlockPos start = BlockPos.containing(from.x, y, from.z);
+		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+		for (int i = 0; i <= steps; i++) {
+			double t = (double) i / steps;
+			double x = from.x + dx * t, z = from.z + dz * t;
+			for (int side = -1; side <= 1; side++) {
+				m.set(net.minecraft.util.Mth.floor(x + px * side), y, net.minecraft.util.Mth.floor(z + pz * side));
+				if (m.equals(start)) continue;
+				if (!walkable(m)) return false;
+			}
+		}
+		return true;
+	}
 }

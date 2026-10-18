@@ -55,7 +55,7 @@ public final class PathWalker {
 	private RouteWalkAction walk;
 	private List<BlockPos> cells;
 	private boolean partial;
-	private int planTicks, replans, legs, sinceCheck;
+	private int planTicks, replans, legs, sinceCheck, notFound;
 	private String failReason = "";
 
 	public PathWalker(Goal goal, PathOptions options, int maxReplans) {
@@ -149,9 +149,11 @@ public final class PathWalker {
 			Route r = plan.getNow(null);
 			plan = null;
 			if (r == null) {
-				if (replan(mc)) return Action.RUN;
+				// Not found twice in a row: there is no way (no point in searching again and again).
+				if (++notFound < 2 && replan(mc)) return Action.RUN;
 				return fail(mc, "갈 수 있는 길이 없어요");
 			}
+			notFound = 0;
 			for (AssistPath.Step s : r.steps()) {
 				if ((!options.allowBreak() && !s.toBreak().isEmpty()) || (!options.allowPlace() && !s.toPlace().isEmpty())) {
 					return fail(mc, "길을 내야 갈 수 있는 곳이에요");
