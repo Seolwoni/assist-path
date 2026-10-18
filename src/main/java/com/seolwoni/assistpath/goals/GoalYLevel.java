@@ -17,7 +17,7 @@
 
 package com.seolwoni.assistpath.goals;
 
-import baritone.api.pathing.movement.ActionCosts;
+import com.seolwoni.assistpath.util.ActionCosts;
 
 /**
  * Useful for mining (getting to diamond / iron level)
