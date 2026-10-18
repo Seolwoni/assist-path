@@ -124,6 +124,12 @@ public class PathGameTest implements FabricClientGameTest {
 				if (ms > maxTickMs) maxTickMs = ms;
 				context.waitTicks(1);
 				ticks++;
+				if (ticks % 40 == 0) {
+					String at = context.computeOnClient(mc -> String.format("%.2f %.2f %.2f sprint=%s", mc.player.getX(), mc.player.getY(), mc.player.getZ(), mc.player.isSprinting()));
+					List<BlockPos> cs = walker.cells();
+					int ix = walker.index();
+					log.add("    t=" + ticks + " " + at + " cell " + ix + "/" + cs.size() + (ix >= 0 && ix < cs.size() ? " -> " + cs.get(ix).toShortString() : ""));
+				}
 			}
 			final int res = result;
 			context.runOnClient(mc -> com.seolwoni.assistcore.util.Body.release(mc));

@@ -82,6 +82,11 @@ public final class PathWalker {
 		return cells == null ? List.of() : cells;
 	}
 
+	/** Index of the route cell being walked to (-1 while planning). */
+	public int index() {
+		return walk == null ? -1 : walk.index();
+	}
+
 	public int replans() {
 		return replans;
 	}

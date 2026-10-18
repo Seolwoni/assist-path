@@ -96,6 +96,10 @@ public final class Body {
 			release(mc);
 			return true;
 		}
+		if (p.isSprinting() && dist < 2.5) {
+			mc.options.keySprint.setDown(false);
+			p.setSprinting(false);
+		}
 		float yaw = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
 		// Keep the head roughly where it is while walking, only easing out of extreme angles.
 		float pitch = Math.max(-10f, Math.min(35f, p.getXRot()));
@@ -118,21 +122,34 @@ public final class Body {
 		walkTicks++;
 		Vec3 pos = p.position();
 		double cx = cell.getX() + 0.5, cz = cell.getZ() + 0.5;
-		double dist = Math.sqrt((cx - pos.x) * (cx - pos.x) + (cz - pos.z) * (cz - pos.z));
+		double rx = pos.x - cx, rz = pos.z - cz;
+		double dist = Math.sqrt(rx * rx + rz * rz);
 		double dyFeet = cell.getY() - pos.y;
-		if (dist < 0.55 && Math.abs(dyFeet) < 0.6) return true;
-		// Look ahead: once close, already steer between this cell and the next one.
+		if (Math.abs(dyFeet) < 0.6) {
+			if (dist < 0.55) return true;
+			// Already past the cell on the way to the next one (cutting a corner a little is fine).
+			double nx = next.getX() + 0.5 - cx, nz = next.getZ() + 0.5 - cz;
+			double nl = Math.sqrt(nx * nx + nz * nz);
+			if (nl > 0.01) {
+				double along = (rx * nx + rz * nz) / nl;
+				double side = Math.abs(rx * nz - rz * nx) / nl;
+				if (along > -0.05 && side < 0.45 && dist < 1.2) return true;
+			}
+		}
+		// Look ahead: once close, already steer towards the next cell.
 		double tx = cx, tz = cz;
-		if (dist < 1.1) {
-			tx = (cx + next.getX() + 0.5) / 2;
-			tz = (cz + next.getZ() + 0.5) / 2;
+		if (dist < 0.9) {
+			tx = cx + (next.getX() + 0.5 - cx) * 0.6;
+			tz = cz + (next.getZ() + 0.5 - cz) * 0.6;
 		}
 		float yaw = (float) (Math.toDegrees(Math.atan2(tz - pos.z, tx - pos.x)) - 90.0);
 		float pitch = Math.max(-10f, Math.min(30f, p.getXRot()));
 		turnTo(p, yaw, pitch, 1f);
 		float yawErr = Math.abs(wrap(yaw - p.getYRot()));
 		mc.options.keyUp.setDown(yawErr < 45f);
-		mc.options.keySprint.setDown(sprint && yawErr < 20f && p.getFoodData().getFoodLevel() > 6);
+		boolean run = sprint && yawErr < 20f && p.getFoodData().getFoodLevel() > 6;
+		mc.options.keySprint.setDown(run);
+		if (!run && p.isSprinting()) p.setSprinting(false);
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
 		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
 		return false;
