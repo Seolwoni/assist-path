@@ -68,7 +68,8 @@ public final class Defense {
 	private enum Mode { NONE, FLEE, CREEPER, DODGE, FIGHT }
 
 	private static Mode mode = Mode.NONE;
-	private static int modeTicks, calm, dodgeTicks, replan, lastHurt;
+	private static int modeTicks, calm, dodgeTicks, replan, lastHurt, chased;
+	private static String giveUp;
 	private static boolean dodgeLeft;
 	private static PathWalker walker;
 	private static BlockPos fleeTo;
@@ -85,16 +86,29 @@ public final class Defense {
 	}
 
 	/**
+	 * Non-null when running away does not help (a mob has kept following for 40 seconds, fighting is off): the mod
+	 * should stop and tell the player. Cleared by {@link #reset}.
+	 */
+	public static String giveUp() {
+		return giveUp;
+	}
+
+	/**
 	 * Call every tick before the mod's own work. Returns true while Defense handles a threat: the mod should not
 	 * run its own actions this tick.
 	 */
 	public static boolean guard(Minecraft mc, LocalPlayer p) {
 		if (!config.enabled || p == null || mc.level == null) return false;
-		if (p.hurtTime > 0 && p.hurtTime != lastHurt && p.hurtTime == 9) Stats.hitsTaken++;
+		if (p.hurtTime == 9 && lastHurt != 9) Stats.hitsTaken++;
 		lastHurt = p.hurtTime;
 		Stats.lowestHealth = Math.min(Stats.lowestHealth, p.getHealth());
 
-		Creeper creeper = Threats.nearCreeper(p, 7);
+		if (mode == Mode.FIGHT && target != null && !target.isAlive()) {
+			Stats.kills++;
+			log("몹을 처치했어요");
+			target = null;
+		}
+		Creeper creeper = Threats.nearCreeper(p, mode == Mode.CREEPER ? 9 : 6);
 		Vec3 arrow = mode == Mode.DODGE ? null : Threats.incoming(p, 14, 1.3);
 		List<Entity> near = Threats.hostiles(p, config.keepAway);
 
@@ -103,7 +117,7 @@ public final class Defense {
 		else if (arrow != null) want = Mode.DODGE;
 		else if (mode == Mode.DODGE && dodgeTicks > 0) want = Mode.DODGE;
 		else if (!near.isEmpty()) want = canFight(p, near) ? Mode.FIGHT : Mode.FLEE;
-		else if ((mode == Mode.FLEE || mode == Mode.CREEPER) && !Threats.hostiles(p, mode == Mode.CREEPER ? 11 : 12).isEmpty()) want = mode; // keep going until clear
+		else if (mode == Mode.FLEE && !Threats.hostiles(p, 11).isEmpty()) want = mode; // keep going until clear
 		else want = Mode.NONE;
 
 		if (want == Mode.NONE) {
@@ -119,8 +133,16 @@ public final class Defense {
 		calm = 0;
 		if (want != mode) begin(mc, p, want, arrow);
 		modeTicks++;
+		if (mode == Mode.FLEE || mode == Mode.CREEPER) {
+			if (++chased > 20 * 40 && giveUp == null) {
+				giveUp = "몹이 계속 따라와요";
+				log("몹이 40초 넘게 따라와서 작업을 멈췄어요");
+			}
+		} else {
+			chased = 0;
+		}
 		switch (mode) {
-			case CREEPER -> flee(mc, p, creeper == null ? Threats.hostiles(p, 11) : List.of(creeper), true);
+			case CREEPER -> flee(mc, p, List.of(creeper), true);
 			case DODGE -> dodge(mc, p);
 			case FIGHT -> fight(mc, p, near);
 			case FLEE -> flee(mc, p, Threats.hostiles(p, 12), false);
@@ -156,10 +178,13 @@ public final class Defense {
 				Stats.dodges++;
 				status = "화살을 피하는 중";
 				dodgeTicks = Human.rand(6, 9);
-				// Step to the side the arrow is not coming from.
-				Vec3 look = Vec3.directionFromRotation(0, p.getYRot());
-				Vec3 side = new Vec3(-look.z, 0, look.x);
-				dodgeLeft = arrow == null || side.dot(arrow) < 0 ? Human.rand(0, 1) == 0 : side.dot(arrow) > 0;
+				// Step across the arrow's line: sideways to its flight, on whichever side is free.
+				double yaw = Math.toRadians(p.getYRot());
+				Vec3 left = new Vec3(Math.cos(yaw), 0, Math.sin(yaw));
+				Vec3 across = arrow == null ? left : new Vec3(-arrow.z, 0, arrow.x).normalize();
+				boolean freeA = standable(p, BlockPos.containing(p.position().add(across.scale(1.2)))), freeB = standable(p, BlockPos.containing(p.position().subtract(across.scale(1.2))));
+				Vec3 go = freeA || !freeB ? across : across.scale(-1);
+				dodgeLeft = go.dot(left) > 0;
 			}
 			case FIGHT -> {
 				Stats.fights++;
@@ -186,11 +211,14 @@ public final class Defense {
 		fleeTo = null;
 		target = null;
 		calm = 0;
+		chased = 0;
 	}
 
 	public static void reset(Minecraft mc) {
 		if (mode != Mode.NONE && mc != null) end(mc);
 		mode = Mode.NONE;
+		giveUp = null;
+		chased = 0;
 	}
 
 	private static void log(String what) {
@@ -249,6 +277,8 @@ public final class Defense {
 					for (Entity e : from) nearest = Math.min(nearest, Math.sqrt(e.blockPosition().distSqr(c)));
 					Vec3 dir = new Vec3(c.getX() - me.getX(), 0, c.getZ() - me.getZ()).normalize();
 					double score = nearest * 2 + (away.lengthSqr() > 0 ? dir.dot(away.normalize()) * 6 : 0) - Math.abs(dy);
+					// Out of sight of archers is worth a lot (they cannot hit what they cannot see).
+					for (Entity e : from) if (ranged(e) && seesSpot(p, e, c)) score -= 12;
 					if (score > bestScore) {
 						bestScore = score;
 						best = c;
@@ -258,6 +288,20 @@ public final class Defense {
 			}
 		}
 		return best;
+	}
+
+	static boolean ranged(Entity e) {
+		var t = e.getType();
+		return t == net.minecraft.world.entity.EntityType.SKELETON || t == net.minecraft.world.entity.EntityType.STRAY || t == net.minecraft.world.entity.EntityType.BOGGED
+				|| t == net.minecraft.world.entity.EntityType.PILLAGER || t == net.minecraft.world.entity.EntityType.WITCH || t == net.minecraft.world.entity.EntityType.BLAZE;
+	}
+
+	private static boolean seesSpot(LocalPlayer p, Entity e, BlockPos c) {
+		Vec3 eye = e.getEyePosition();
+		Vec3 spot = new Vec3(c.getX() + 0.5, c.getY() + 1.5, c.getZ() + 0.5);
+		var hit = p.level().clip(new net.minecraft.world.level.ClipContext(eye, spot, net.minecraft.world.level.ClipContext.Block.COLLIDER,
+				net.minecraft.world.level.ClipContext.Fluid.NONE, e));
+		return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS;
 	}
 
 	private static boolean standable(LocalPlayer p, BlockPos feet) {
