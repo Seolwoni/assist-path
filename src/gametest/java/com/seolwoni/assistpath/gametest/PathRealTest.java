@@ -77,7 +77,7 @@ public class PathRealTest implements FabricClientGameTest {
 			int[][] dirs = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 			for (int dist : new int[] {25, 50}) {
 				for (int[] d : dirs) {
-					int[] goal = naturalGround(sp, start[0] + d[0] * dist, start[1] + d[1] * dist, 16);
+					int[] goal = naturalGround(sp, start[0] + d[0] * dist, start[1] + d[1] * dist, suite.equals("real-river") ? 30 : 16);
 					if (goal == null) {
 						log.add(String.format("%2d m: no natural ground near %d, %d (water or buildings), skipped", dist, start[0] + d[0] * dist, start[1] + d[1] * dist));
 						continue;
