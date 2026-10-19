@@ -7,8 +7,14 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  # Each test suite runs in its own job, all at the same time: "flat" is the prepared test field,
+  # "real-..." are runs in a normally generated world (see RealWorld in the game tests).
+  test:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [flat, real-forest, real-hills, real-river, real-village]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -17,59 +23,107 @@ jobs:
           distribution: 'microsoft'
       - run: chmod +x ./gradlew
       - name: build
+        id: build
+        continue-on-error: true
         run: |
           set -o pipefail
           ./gradlew build --stacktrace 2>&1 | tee build.log
       - name: game test
         id: gametest
+        if: steps.build.outcome == 'success'
         continue-on-error: true
-        timeout-minutes: 30
+        timeout-minutes: 55
+        env:
+          ASSIST_GT: ${{ matrix.suite }}
         run: |
           sudo apt-get update -q > /dev/null && sudo apt-get install -y -q xvfb libgl1-mesa-dri mesa-utils > /dev/null
+          ./gradlew downloadAssets > /dev/null 2>&1 || (sleep 15; ./gradlew downloadAssets > /dev/null 2>&1) || (sleep 30; ./gradlew downloadAssets) || true
           set -o pipefail
           xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --stacktrace 2>&1 | tee gametest.log
-      - name: save log
+      - name: collect
         if: always()
         run: |
-          mkdir -p /tmp/gt/shots
-          [ -f gametest.log ] && grep -E -A3 "error:|ERROR|Exception|FAIL|Caused by|at com.seolwoni|AssertionError|What went wrong|^> " gametest.log | head -300 > /tmp/gt/gt-errors.txt || true
-          [ -f gametest.log ] && tail -200 gametest.log > /tmp/gt/gt-tail.txt || true
-          find . -name "*-test-result.txt" -not -path "./.git/*" -exec cp {} /tmp/gt/ \; 2>/dev/null || true
-          find . -name "*.png" -path "*screenshots*" -not -path "./.git/*" -exec cp {} /tmp/gt/shots/ \; 2>/dev/null || true
-          LOG=$(find . -name "latest.log" -path "*run*" -not -path "./.git/*" | head -1); [ -n "$LOG" ] && tail -400 "$LOG" > /tmp/gt/gt-latest.txt || true
+          mkdir -p out/shots out/jars
+          echo "${{ steps.build.outcome }}" > out/build-outcome.txt
+          o="${{ steps.gametest.outcome }}"; [ -z "$o" ] && o=failure
+          echo "$o" > out/outcome.txt
+          [ -f build.log ] && grep -E "error:|warning:|\.java:[0-9]+|What went wrong|^> |Caused by|Exception" build.log | head -400 > out/errors.txt || true
+          [ -f build.log ] && grep -A6 "error:" build.log | head -300 > out/compile.txt || true
+          [ -f build.log ] && tail -300 build.log > out/tail.txt || true
+          [ -f gametest.log ] && grep -E -A3 "error:|ERROR|Exception|FAIL|Caused by|at com.seolwoni|AssertionError|What went wrong|^> " gametest.log | head -300 > out/gt-errors.txt || true
+          [ -f gametest.log ] && tail -200 gametest.log > out/gt-tail.txt || true
+          find . -name "*-test-result.txt" -not -path "./.git/*" -not -path "./out/*" -exec cp {} out/ \; 2>/dev/null || true
+          find . -name "*.png" -path "*screenshots*" -not -path "./.git/*" -not -path "./out/*" -exec cp {} out/shots/ \; 2>/dev/null || true
+          LOG=$(find . -name "latest.log" -path "*run*" -not -path "./.git/*" | head -1); [ -n "$LOG" ] && tail -400 "$LOG" > out/gt-latest.txt || true
+          if [ "${{ matrix.suite }}" = "flat" ]; then
+            cp build/libs/*.jar out/jars/ 2>/dev/null || true
+            JAR=$(find ~/.gradle .gradle -name "minecraft-merged.jar" 2>/dev/null | head -1)
+            [ -z "$JAR" ] && JAR=$(find ~/.gradle .gradle -name "minecraft-*.jar" -size +5M 2>/dev/null | grep -v sources | head -1)
+            echo "jar: $JAR" > out/sigs.txt
+            for c in $(cat .github/sigs.txt 2>/dev/null); do javap -p -cp "$JAR" $c >> out/sigs.txt 2>&1 || true; done
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gt-${{ matrix.suite }}
+          path: out/
+
+  publish:
+    needs: test
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gt-*
+          path: arts
+      - name: assemble log
+        id: log
+        run: |
+          mkdir -p /tmp/log/gt
+          overall=success
+          for s in flat real-forest real-hills real-river real-village; do
+            d=arts/gt-$s
+            o=$(cat $d/outcome.txt 2>/dev/null || echo failure)
+            echo "$s: $o" >> /tmp/log/gt/suites.txt
+            [ "$o" = "success" ] || overall=failure
+            if [ "$s" = "flat" ]; then
+              cp $d/errors.txt $d/compile.txt $d/tail.txt $d/sigs.txt /tmp/log/ 2>/dev/null || true
+              cp -r $d/shots /tmp/log/gt/ 2>/dev/null || true
+              cp $d/*.txt /tmp/log/gt/ 2>/dev/null || true
+            else
+              mkdir -p /tmp/log/gt/$s
+              cp -r $d/* /tmp/log/gt/$s/ 2>/dev/null || true
+              rm -rf /tmp/log/gt/$s/jars
+            fi
+          done
+          echo "$overall" > /tmp/log/gt/outcome.txt
+          echo "overall=$overall" >> $GITHUB_OUTPUT
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
-          grep -E "error:|warning:|\.java:[0-9]+|What went wrong|^> |Caused by|Exception" build.log | head -400 > /tmp/errors.txt || true
-          grep -A6 "error:" build.log | head -300 > /tmp/compile.txt || true
-          tail -300 build.log > /tmp/tail.txt
-          JAR=$(find ~/.gradle .gradle -name "minecraft-merged.jar" 2>/dev/null | head -1)
-          [ -z "$JAR" ] && JAR=$(find ~/.gradle .gradle -name "minecraft-*.jar" -size +5M 2>/dev/null | grep -v sources | head -1)
-          echo "jar: $JAR" > /tmp/sigs.txt
-          for c in $(cat .github/sigs.txt); do
-            javap -p -cp "$JAR" $c >> /tmp/sigs.txt 2>&1 || true
-          done
           git checkout --orphan ci-log
           git rm -rf --cached . > /dev/null
-          cp /tmp/errors.txt /tmp/compile.txt /tmp/tail.txt /tmp/sigs.txt .
-          cp -r /tmp/gt gt
-          echo "${{ steps.gametest.outcome }}" > gt/outcome.txt
-          git add errors.txt tail.txt compile.txt sigs.txt gt
-          git commit -m "build log ${{ github.run_number }}"
+          git clean -fdq -e arts
+          cp -r /tmp/log/* .
+          git add -A -- . ':!arts'
+          git commit -qm "build log ${{ github.run_number }}"
           git push -f origin ci-log
-      - uses: actions/upload-artifact@v4
-        with:
-          name: assistpath-jar
-          path: build/libs/
       - name: release notes
         run: |
+          git checkout -q ${{ github.sha }} -- CHANGELOG.md gradle.properties
           VER=$(grep '^version=' gradle.properties | cut -d= -f2)
           awk -v v="## $VER" '$0 ~ "^## " { if (p) exit; if (index($0, v) == 1) p = 1 } p' CHANGELOG.md > release-notes.md
           printf '\n---\nFabric 26.2용. 아래 jar 파일을 받아 mods 폴더에 넣으세요. (Fabric API 필요, Mod Menu 권장)\n' >> release-notes.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: assistpath-jar
+          path: arts/gt-flat/jars/
       - name: release
-        if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[no release]') && steps.gametest.outcome == 'success'
+        if: github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[no release]') && steps.log.outputs.overall == 'success'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Assist Path (build ${{ github.run_number }})
           body_path: release-notes.md
-          files: build/libs/*.jar
+          files: arts/gt-flat/jars/*.jar
