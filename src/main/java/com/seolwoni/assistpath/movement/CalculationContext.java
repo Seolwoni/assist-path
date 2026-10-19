@@ -79,6 +79,8 @@ public class CalculationContext {
     public final double waterWalkSpeed;
     public final double breakBlockAdditionalCost;
     public double backtrackCostFavoringCoefficient;
+    /** Positions of visible hostile mobs when the plan was made (mob avoidance). */
+    public java.util.List<net.minecraft.core.BlockPos> mobs = java.util.List.of();
     public double jumpPenalty;
     public final double walkOnWaterOnePenalty;
     public final boolean allowWalkOnMagmaBlocks;
@@ -110,6 +112,8 @@ public class CalculationContext {
         this.avoidWater = options.avoidWater();
         this.allowBreakAnyway = new ArrayList<>(PathSettings.get().allowBreakAnyway.value);
         this.allowParkour = options.allowParkour() || PathSettings.get().allowParkour.value;
+        // Assist Path: hostile mobs the player can see right now (read here, on the client thread).
+        this.mobs = com.seolwoni.assistpath.defense.Threats.avoidPositions(player);
         this.allowParkourPlace = options.allowPlace() && PathSettings.get().allowParkourPlace.value;
         this.allowJumpAtBuildLimit = PathSettings.get().allowJumpAtBuildLimit.value;
         this.allowParkourAscend = PathSettings.get().allowParkourAscend.value;

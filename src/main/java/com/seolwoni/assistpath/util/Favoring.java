@@ -38,6 +38,23 @@ public final class Favoring {
         if (coeff != 1D && previous != null) {
             previous.forEach(pos -> favorings.put(BetterBlockPos.longHash(pos), coeff));
         }
+        // Mob avoidance (from Baritone's Avoidance): cells near a visible hostile mob cost more, so the route keeps
+        // its distance when there is another way. Not a wall: if the only way passes a mob, the route still goes.
+        if (com.seolwoni.assistpath.PathSettings.get().avoidance.value && context.mobs != null) {
+            double c = com.seolwoni.assistpath.PathSettings.get().mobAvoidanceCoefficient.value;
+            int r = com.seolwoni.assistpath.PathSettings.get().mobAvoidanceRadius.value;
+            for (net.minecraft.core.BlockPos m : context.mobs) {
+                for (int dx = -r; dx <= r; dx++) {
+                    for (int dy = -r; dy <= r; dy++) {
+                        for (int dz = -r; dz <= r; dz++) {
+                            if (dx * dx + dy * dy + dz * dz > r * r) continue;
+                            long h = BetterBlockPos.longHash(m.getX() + dx, m.getY() + dy, m.getZ() + dz);
+                            favorings.put(h, favorings.get(h) * c);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public boolean isEmpty() {

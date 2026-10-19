@@ -1,0 +1,329 @@
+package com.seolwoni.assistpath.defense;
+
+import java.util.List;
+
+import com.seolwoni.assistcore.engine.Action;
+import com.seolwoni.assistcore.util.Body;
+import com.seolwoni.assistcore.util.Human;
+import com.seolwoni.assistcore.util.InvBase;
+import com.seolwoni.assistpath.PathOptions;
+import com.seolwoni.assistpath.goals.GoalBlock;
+import com.seolwoni.assistpath.walk.PathWalker;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * Defense: keeps the player alive while a mod works. Every mod calls {@link #guard} each tick before its own work;
+ * while it returns true, Defense has the controls and the mod waits (its queued work carries on afterwards).
+ *
+ * <ul>
+ * <li>A creeper close by: get away from it, whatever else is going on.</li>
+ * <li>An arrow (or other projectile) about to hit: a quick step to the side.</li>
+ * <li>Hostile mobs close: back off and walk away, or (only when fighting is switched on, with a weapon, not
+ * outnumbered and not low on health) turn and fight.</li>
+ * </ul>
+ * Only mobs a player could see are counted. Fighting is off by default.
+ */
+public final class Defense {
+	private Defense() {
+	}
+
+	public static final class Config {
+		/** Off: the mods behave as before (stop when a mob comes, if they are set to). */
+		public boolean enabled = true;
+		/** Fight back (melee) when it is safe to; off by default. */
+		public boolean attack = false;
+		/** At or below this health, never fight: get away. */
+		public float fleeHealth = 10f;
+		/** Mobs closer than this make us move away (or fight). */
+		public double keepAway = 7;
+	}
+
+	public static final Config config = new Config();
+
+	/** What happened this session (for the HUD, the tests and the usage log). */
+	public static final class Stats {
+		public static int flees, dodges, creeperEscapes, fights, kills, hitsTaken;
+		public static float lowestHealth = 20f;
+
+		public static String summary() {
+			return "defense: flees=" + flees + " dodges=" + dodges + " creeperEscapes=" + creeperEscapes + " fights=" + fights + " kills=" + kills
+					+ " hitsTaken=" + hitsTaken + " lowestHealth=" + lowestHealth;
+		}
+
+		public static void reset() {
+			flees = dodges = creeperEscapes = fights = kills = hitsTaken = 0;
+			lowestHealth = 20f;
+		}
+	}
+
+	private enum Mode { NONE, FLEE, CREEPER, DODGE, FIGHT }
+
+	private static Mode mode = Mode.NONE;
+	private static int modeTicks, calm, dodgeTicks, replan, lastHurt;
+	private static boolean dodgeLeft;
+	private static PathWalker walker;
+	private static BlockPos fleeTo;
+	private static Entity target;
+	private static String status = "";
+
+	/** What Defense is doing right now (empty when nothing). */
+	public static String status() {
+		return mode == Mode.NONE ? "" : status;
+	}
+
+	public static boolean active() {
+		return mode != Mode.NONE;
+	}
+
+	/**
+	 * Call every tick before the mod's own work. Returns true while Defense handles a threat: the mod should not
+	 * run its own actions this tick.
+	 */
+	public static boolean guard(Minecraft mc, LocalPlayer p) {
+		if (!config.enabled || p == null || mc.level == null) return false;
+		if (p.hurtTime > 0 && p.hurtTime != lastHurt && p.hurtTime == 9) Stats.hitsTaken++;
+		lastHurt = p.hurtTime;
+		Stats.lowestHealth = Math.min(Stats.lowestHealth, p.getHealth());
+
+		Creeper creeper = Threats.nearCreeper(p, 7);
+		Vec3 arrow = mode == Mode.DODGE ? null : Threats.incoming(p, 14, 1.3);
+		List<Entity> near = Threats.hostiles(p, config.keepAway);
+
+		Mode want;
+		if (creeper != null) want = Mode.CREEPER;
+		else if (arrow != null) want = Mode.DODGE;
+		else if (mode == Mode.DODGE && dodgeTicks > 0) want = Mode.DODGE;
+		else if (!near.isEmpty()) want = canFight(p, near) ? Mode.FIGHT : Mode.FLEE;
+		else if ((mode == Mode.FLEE || mode == Mode.CREEPER) && !Threats.hostiles(p, mode == Mode.CREEPER ? 11 : 12).isEmpty()) want = mode; // keep going until clear
+		else want = Mode.NONE;
+
+		if (want == Mode.NONE) {
+			if (mode == Mode.NONE) return false;
+			// Calm down for a moment before handing back (no twitching back and forth at the edge of the range).
+			if (++calm < Human.rand(10, 20)) {
+				Body.release(mc);
+				return true;
+			}
+			end(mc);
+			return false;
+		}
+		calm = 0;
+		if (want != mode) begin(mc, p, want, arrow);
+		modeTicks++;
+		switch (mode) {
+			case CREEPER -> flee(mc, p, creeper == null ? Threats.hostiles(p, 11) : List.of(creeper), true);
+			case DODGE -> dodge(mc, p);
+			case FIGHT -> fight(mc, p, near);
+			case FLEE -> flee(mc, p, Threats.hostiles(p, 12), false);
+			default -> {
+			}
+		}
+		return true;
+	}
+
+	private static boolean canFight(LocalPlayer p, List<Entity> near) {
+		if (!config.attack || p.getHealth() <= config.fleeHealth) return false;
+		if (near.size() > 2) return false;
+		for (Entity e : near) if (e instanceof Creeper) return false;
+		return weaponSlot(p) >= 0;
+	}
+
+	private static void begin(Minecraft mc, LocalPlayer p, Mode m, Vec3 arrow) {
+		Body.release(mc);
+		if (mc.gameMode != null) mc.gameMode.stopDestroyBlock();
+		Body.newTurn();
+		Body.resetWalk();
+		walker = null;
+		fleeTo = null;
+		replan = 0;
+		modeTicks = 0;
+		switch (m) {
+			case CREEPER -> {
+				Stats.creeperEscapes++;
+				status = "크리퍼를 피하는 중";
+				log("크리퍼가 가까워서 피했어요");
+			}
+			case DODGE -> {
+				Stats.dodges++;
+				status = "화살을 피하는 중";
+				dodgeTicks = Human.rand(6, 9);
+				// Step to the side the arrow is not coming from.
+				Vec3 look = Vec3.directionFromRotation(0, p.getYRot());
+				Vec3 side = new Vec3(-look.z, 0, look.x);
+				dodgeLeft = arrow == null || side.dot(arrow) < 0 ? Human.rand(0, 1) == 0 : side.dot(arrow) > 0;
+			}
+			case FIGHT -> {
+				Stats.fights++;
+				status = "몹과 싸우는 중";
+				log("몹과 싸웠어요");
+			}
+			case FLEE -> {
+				Stats.flees++;
+				status = "몹을 피해 물러나는 중";
+				log("몹을 피해 물러났어요");
+			}
+			default -> {
+			}
+		}
+		mode = m;
+	}
+
+	private static void end(Minecraft mc) {
+		Body.release(mc);
+		Body.resetWalk();
+		Body.newTurn();
+		mode = Mode.NONE;
+		walker = null;
+		fleeTo = null;
+		target = null;
+		calm = 0;
+	}
+
+	public static void reset(Minecraft mc) {
+		if (mode != Mode.NONE && mc != null) end(mc);
+		mode = Mode.NONE;
+	}
+
+	private static void log(String what) {
+		try {
+			com.seolwoni.assistcore.log.UsageLog.event("defense", what);
+		} catch (RuntimeException ignored) {
+		}
+	}
+
+	// ------------------------------------------------------------------ flee
+
+	/** Walk (run) to a free spot well away from the threats; replan now and then as they move. */
+	private static void flee(Minecraft mc, LocalPlayer p, List<Entity> from, boolean creeper) {
+		if (from.isEmpty()) {
+			Body.release(mc);
+			return;
+		}
+		if (fleeTo == null || walker == null || --replan <= 0) {
+			fleeTo = fleeSpot(p, from, creeper ? 9 : 10);
+			replan = Human.rand(30, 45);
+			walker = fleeTo == null ? null : new PathWalker(new GoalBlock(fleeTo), PathOptions.WALK, 1);
+		}
+		if (walker != null) {
+			int r = walker.tick(mc, p);
+			if (r == Action.RUN) return;
+			walker = null;
+			fleeTo = null;
+			replan = 0;
+		}
+		// No way out found: back away from the nearest one, facing it (like a player would).
+		Entity n = from.get(0);
+		Body.lookAt(p, n.getEyePosition(), 6f);
+		mc.options.keyUp.setDown(false);
+		mc.options.keyDown.setDown(true);
+	}
+
+	/** A standable cell 8 to 14 blocks away that keeps the most distance from every threat. */
+	private static BlockPos fleeSpot(LocalPlayer p, List<Entity> from, int min) {
+		BlockPos me = p.blockPosition();
+		Vec3 away = Vec3.ZERO;
+		for (Entity e : from) {
+			Vec3 d = p.position().subtract(e.position());
+			double len = Math.max(0.5, d.length());
+			away = away.add(d.scale(1.0 / (len * len)));
+		}
+		BlockPos best = null;
+		double bestScore = -1e9;
+		for (int a = 0; a < 24; a++) {
+			double ang = a * Math.PI * 2 / 24;
+			for (int r = min; r <= min + 5; r += 2) {
+				int x = me.getX() + (int) Math.round(Math.cos(ang) * r), z = me.getZ() + (int) Math.round(Math.sin(ang) * r);
+				for (int dy = 3; dy >= -3; dy--) {
+					BlockPos c = new BlockPos(x, me.getY() + dy, z);
+					if (!standable(p, c)) continue;
+					double nearest = Double.MAX_VALUE;
+					for (Entity e : from) nearest = Math.min(nearest, Math.sqrt(e.blockPosition().distSqr(c)));
+					Vec3 dir = new Vec3(c.getX() - me.getX(), 0, c.getZ() - me.getZ()).normalize();
+					double score = nearest * 2 + (away.lengthSqr() > 0 ? dir.dot(away.normalize()) * 6 : 0) - Math.abs(dy);
+					if (score > bestScore) {
+						bestScore = score;
+						best = c;
+					}
+					break;
+				}
+			}
+		}
+		return best;
+	}
+
+	private static boolean standable(LocalPlayer p, BlockPos feet) {
+		var level = p.level();
+		var f = level.getBlockState(feet);
+		var h = level.getBlockState(feet.above());
+		var b = level.getBlockState(feet.below());
+		if (f.blocksMotion() || h.blocksMotion() || !f.getFluidState().isEmpty() || !h.getFluidState().isEmpty()) return false;
+		if (!b.isFaceSturdy(level, feet.below(), net.minecraft.core.Direction.UP)) return false;
+		return b.getFluidState().isEmpty() && !b.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK)
+				&& !b.is(net.minecraft.world.level.block.Blocks.CACTUS) && !f.is(net.minecraft.world.level.block.Blocks.FIRE);
+	}
+
+	// ------------------------------------------------------------------ dodge
+
+	private static void dodge(Minecraft mc, LocalPlayer p) {
+		if (dodgeTicks-- <= 0) {
+			Body.release(mc);
+			mode = Mode.NONE;
+			return;
+		}
+		mc.options.keyUp.setDown(false);
+		mc.options.keyLeft.setDown(dodgeLeft);
+		mc.options.keyRight.setDown(!dodgeLeft);
+		mc.options.keySprint.setDown(false);
+	}
+
+	// ------------------------------------------------------------------ fight
+
+	private static int weaponSlot(LocalPlayer p) {
+		int sword = -1, axe = -1;
+		for (int i = 0; i < 9; i++) {
+			var s = p.getInventory().getItem(i);
+			if (s.is(ItemTags.SWORDS) && sword < 0) sword = i;
+			if (s.is(ItemTags.AXES) && axe < 0) axe = i;
+		}
+		return sword >= 0 ? sword : axe;
+	}
+
+	private static void fight(Minecraft mc, LocalPlayer p, List<Entity> near) {
+		if (target == null || !target.isAlive() || target.distanceTo(p) > config.keepAway + 2) {
+			if (target != null && !target.isAlive()) {
+				Stats.kills++;
+				log("몹을 처치했어요");
+			}
+			target = null;
+			double best = Double.MAX_VALUE;
+			for (Entity e : near) {
+				if (e instanceof Enemy && e.distanceTo(p) < best) {
+					best = e.distanceTo(p);
+					target = e;
+				}
+			}
+			if (target == null) return;
+		}
+		int slot = weaponSlot(p);
+		if (slot >= 0) InvBase.select(p, slot);
+		Vec3 aim = target.position().add(0, target.getBbHeight() * 0.6, 0);
+		boolean onTarget = Body.lookAt(p, aim, 8f);
+		double d = target.distanceTo(p);
+		// Keep at arm's length: step in when too far, back off when it gets too close.
+		mc.options.keyUp.setDown(d > 2.8);
+		mc.options.keyDown.setDown(d < 1.6);
+		if (onTarget && d <= 3.0 && p.getAttackStrengthScale(0.5f) >= 0.95f && mc.gameMode != null) {
+			mc.gameMode.attack(p, target);
+			p.swing(InteractionHand.MAIN_HAND);
+		}
+	}
+}

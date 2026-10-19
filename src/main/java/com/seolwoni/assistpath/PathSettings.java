@@ -58,6 +58,10 @@ public final class PathSettings {
 	public final Setting<Boolean> allowPlaceInFluidsFlow = new Setting<>(true);
 	public final Setting<Boolean> allowPlaceInFluidsSource = new Setting<>(true);
 	public final Setting<Boolean> allowSprint = new Setting<>(true);
+	/** Baritone's mob avoidance: path cost near hostile mobs the player can see is multiplied by this. */
+	public final Setting<Boolean> avoidance = new Setting<>(true);
+	public final Setting<Double> mobAvoidanceCoefficient = new Setting<>(1.5);
+	public final Setting<Integer> mobAvoidanceRadius = new Setting<>(8);
 	public final Setting<Boolean> allowVines = new Setting<>(false);
 	public final Setting<Boolean> allowWalkOnBottomSlab = new Setting<>(true);
 	public final Setting<Boolean> allowWalkOnMagmaBlocks = new Setting<>(false);
