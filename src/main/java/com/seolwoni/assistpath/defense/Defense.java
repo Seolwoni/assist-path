@@ -68,7 +68,7 @@ public final class Defense {
 	private enum Mode { NONE, FLEE, CREEPER, DODGE, FIGHT }
 
 	private static Mode mode = Mode.NONE;
-	private static int modeTicks, calm, dodgeTicks, replan, lastHurt, chased;
+	private static int modeTicks, calm, dodgeTicks, replan, lastHurt, chased, quiet;
 	private static String giveUp;
 	private static boolean dodgeLeft;
 	private static PathWalker walker;
@@ -99,6 +99,8 @@ public final class Defense {
 	 */
 	public static boolean guard(Minecraft mc, LocalPlayer p) {
 		if (!config.enabled || p == null || mc.level == null) return false;
+		if (mode == Mode.NONE && ++quiet > 20 * 30) chased = 0; // half a minute without trouble: start over
+		if (mode != Mode.NONE) quiet = 0;
 		if (p.hurtTime == 9 && lastHurt != 9) Stats.hitsTaken++;
 		lastHurt = p.hurtTime;
 		Stats.lowestHealth = Math.min(Stats.lowestHealth, p.getHealth());
@@ -111,6 +113,16 @@ public final class Defense {
 		Creeper creeper = Threats.nearCreeper(p, mode == Mode.CREEPER ? 9 : 6);
 		Vec3 arrow = mode == Mode.DODGE ? null : Threats.incoming(p, 14, 1.3);
 		List<Entity> near = Threats.hostiles(p, config.keepAway);
+
+		// Being chased: count every tick while running away (the calm pauses in between too).
+		if (mode == Mode.FLEE || mode == Mode.CREEPER) {
+			if (++chased > 20 * 40 && giveUp == null) {
+				giveUp = "몹이 계속 따라와요";
+				log("몹이 40초 넘게 따라와서 작업을 멈췄어요");
+			}
+		} else if (mode != Mode.NONE) {
+			chased = 0;
+		}
 
 		Mode want;
 		if (creeper != null) want = Mode.CREEPER;
@@ -133,14 +145,6 @@ public final class Defense {
 		calm = 0;
 		if (want != mode) begin(mc, p, want, arrow);
 		modeTicks++;
-		if (mode == Mode.FLEE || mode == Mode.CREEPER) {
-			if (++chased > 20 * 40 && giveUp == null) {
-				giveUp = "몹이 계속 따라와요";
-				log("몹이 40초 넘게 따라와서 작업을 멈췄어요");
-			}
-		} else {
-			chased = 0;
-		}
 		switch (mode) {
 			case CREEPER -> flee(mc, p, List.of(creeper), true);
 			case DODGE -> dodge(mc, p);
@@ -211,7 +215,6 @@ public final class Defense {
 		fleeTo = null;
 		target = null;
 		calm = 0;
-		chased = 0;
 	}
 
 	public static void reset(Minecraft mc) {
