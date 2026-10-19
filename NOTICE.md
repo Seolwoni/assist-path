@@ -17,5 +17,6 @@ Original authors: leijurv, Brady and the Baritone contributors. All original cop
   calculation are in `PathSettings` with Baritone's defaults (a few adjusted: more storage blocks avoided when breaking,
   no water-bucket falls).
 - `BlockStateInterface` reads only chunks loaded by the client (no world cache yet).
-- `Path` / `PathResult` simplified; mob avoidance removed for now.
+- `Path` / `PathResult` simplified. Mob avoidance (Baritone's `Avoidance`, radius 8, coefficient 1.5) is applied in `Favoring` from the mobs the player can see when a plan starts.
+- New `defense` package (written for Assist Path, not copied): reacts to creepers, projectiles and nearby hostile mobs; optional melee.
 - New public API: `AssistPath.find(...)` returning a `Route` of steps.

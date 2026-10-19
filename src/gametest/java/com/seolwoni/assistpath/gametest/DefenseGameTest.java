@@ -41,8 +41,8 @@ public class DefenseGameTest implements FabricClientGameTest {
 			RealWorld.cmd(sp, "forceload add -40 -40 40 40");
 			List<Case> cases = List.of(
 					new Case("creeper in the way", "creeper 0 101 12", false, 700),
-					new Case("zombie, fighting off", "zombie 6 101 6", false, 700),
-					new Case("skeleton at range", "skeleton 14 101 15", false, 700),
+					new Case("zombie, fighting off", "zombie 6 101 6", false, 1000),
+					new Case("skeleton at range", "skeleton 18 101 30", false, 700),
 					new Case("two zombies, fighting off", "zombie -6 101 10|zombie 6 101 14", false, 700),
 					new Case("zombie, fighting on", "zombie 5 101 8", true, 700));
 			int n = 0;
@@ -135,9 +135,11 @@ public class DefenseGameTest implements FabricClientGameTest {
 						if (hits > 3) failures.add(c.name() + ": hit " + hits + " times (more than 3)");
 						if (stats.contains("flees=0")) failures.add(c.name() + ": never moved away from the zombie");
 						log.add("    give up: " + gaveUp);
+						if (n == 2 && gaveUp == null) failures.add(c.name() + ": kept running from a zombie for 50 s without telling the mod to stop");
 					}
 					case 3 -> {
 						if (hits > 4) failures.add(c.name() + ": hit " + hits + " times (more than 4)");
+						if (guarded == 0) failures.add(c.name() + ": the skeleton was never noticed");
 					}
 					case 5 -> {
 						if (stats.contains("kills=0") && mobsLeft > 0) failures.add(c.name() + ": did not deal with the zombie");
