@@ -79,10 +79,12 @@ public final class AssistPath implements ClientModInitializer {
 		/** Walks with {@link com.seolwoni.assistpath.walk.PathWalker}: started, arrived, given up; ticks spent waiting for plans and walking. */
 		public static volatile int walks, arrived, gaveUp, waitTicks, walkTicks;
 		public static final java.util.Map<String, Integer> reasons = new java.util.concurrent.ConcurrentHashMap<>();
+		/** The last few goals given up on (for the tests). */
+		public static final java.util.List<String> gaveUpGoals = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
 
 		public static String summary() {
 			return "path: walks=" + walks + " arrived=" + arrived + " gaveUp=" + gaveUp + " " + reasons + " plans=" + plans
-					+ " notFound=" + failed + " waitTicks=" + waitTicks + " walkTicks=" + walkTicks + " slowestPlan=" + maxMillis + "ms";
+					+ " notFound=" + failed + " gaveUpGoals=" + gaveUpGoals + " waitTicks=" + waitTicks + " walkTicks=" + walkTicks + " slowestPlan=" + maxMillis + "ms";
 		}
 	}
 

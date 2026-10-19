@@ -169,7 +169,7 @@ public final class Body {
 		boolean push = dist > glide + 0.1 && yawErr < (dist > 0.5 ? 50f : 35f);
 		mc.options.keyUp.setDown(push);
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
-		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
+		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || swimUp(p, dyFeet));
 		return false;
 	}
 
@@ -220,8 +220,17 @@ public final class Body {
 		mc.options.keySprint.setDown(run);
 		if (!run && p.isSprinting()) p.setSprinting(false);
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
-		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || p.isInWater());
+		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || swimUp(p, dyFeet));
 		return false;
+	}
+
+	/**
+	 * In water, only swim up when it is needed: head under water, or pushing against the edge to climb out.
+	 * Bobbing up and down all the way would make it jump out high and land hard (that tramples farmland).
+	 */
+	private static boolean swimUp(LocalPlayer p, double dyFeet) {
+		if (!p.isInWater()) return false;
+		return p.isUnderWater() || (p.horizontalCollision && dyFeet > -0.5);
 	}
 
 	public static void release(Minecraft mc) {

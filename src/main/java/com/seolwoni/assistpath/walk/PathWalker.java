@@ -96,6 +96,7 @@ public final class PathWalker {
 	private int fail(Minecraft mc, String why) {
 		AssistPath.Stats.gaveUp++;
 		AssistPath.Stats.reasons.merge(why, 1, Integer::sum);
+		if (AssistPath.Stats.gaveUpGoals.size() < 12) AssistPath.Stats.gaveUpGoals.add(goal + " from " + feet(Minecraft.getInstance().player).toShortString());
 		Body.release(mc);
 		if (plan != null) plan.cancel(false);
 		plan = null;

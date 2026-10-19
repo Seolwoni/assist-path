@@ -109,11 +109,12 @@ public interface MovementHelper extends ActionCosts {
     }
 
     static boolean canWalkThrough(CalculationContext context, int x, int y, int z, BlockState state) {
+        if (context.avoidWater && !state.getFluidState().isEmpty()) return false; // Assist Path: stay dry (fields)
         return context.precomputedData.canWalkThrough(context.bsi, x, y, z, state);
     }
 
     static boolean canWalkThrough(CalculationContext context, int x, int y, int z) {
-        return context.precomputedData.canWalkThrough(context.bsi, x, y, z, context.get(x, y, z));
+        return canWalkThrough(context, x, y, z, context.get(x, y, z));
     }
 
     static boolean canWalkThrough(BlockStateInterface bsi, int x, int y, int z, BlockState state) {

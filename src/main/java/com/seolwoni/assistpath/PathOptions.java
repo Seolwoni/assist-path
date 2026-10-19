@@ -24,10 +24,13 @@ package com.seolwoni.assistpath;
  * @param allowBreak   dig through blocks in the way
  * @param allowPlace   put down blocks to cross gaps or climb
  * @param allowParkour jump over gaps
+ * @param avoidWater   never step into water (farms: climbing out of a water channel can trample farmland)
  */
-public record PathOptions(boolean allowBreak, boolean allowPlace, boolean allowParkour) {
+public record PathOptions(boolean allowBreak, boolean allowPlace, boolean allowParkour, boolean avoidWater) {
 	/** Walking, climbing steps, dropping down and swimming only. */
-	public static final PathOptions WALK = new PathOptions(false, false, false);
+	public static final PathOptions WALK = new PathOptions(false, false, false, false);
+	/** Walking without going into water (around a field's water channels instead of through them). */
+	public static final PathOptions WALK_DRY = new PathOptions(false, false, false, true);
 	/** Everything Baritone does by default (used by the planning tests). */
-	public static final PathOptions FULL = new PathOptions(true, true, false);
+	public static final PathOptions FULL = new PathOptions(true, true, false, false);
 }

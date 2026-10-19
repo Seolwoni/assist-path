@@ -60,6 +60,8 @@ public class CalculationContext {
     public final boolean canSprint;
     protected final double placeBlockCost; // protected because you should call the function instead
     public final boolean allowBreak;
+    /** Assist Path: never step into water (crossing a field's water channel means jumping out onto farmland). */
+    public final boolean avoidWater;
     public final List<Block> allowBreakAnyway;
     public final boolean allowParkour;
     public final boolean allowParkourPlace;
@@ -105,6 +107,7 @@ public class CalculationContext {
         this.canSprint = PathSettings.get().allowSprint.value && player.getFoodData().getFoodLevel() > 6;
         this.placeBlockCost = PathSettings.get().blockPlacementPenalty.value;
         this.allowBreak = options.allowBreak() && PathSettings.get().allowBreak.value;
+        this.avoidWater = options.avoidWater();
         this.allowBreakAnyway = new ArrayList<>(PathSettings.get().allowBreakAnyway.value);
         this.allowParkour = options.allowParkour() || PathSettings.get().allowParkour.value;
         this.allowParkourPlace = options.allowPlace() && PathSettings.get().allowParkourPlace.value;
