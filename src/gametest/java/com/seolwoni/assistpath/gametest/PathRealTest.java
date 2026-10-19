@@ -64,8 +64,9 @@ public class PathRealTest implements FabricClientGameTest {
 				throw new AssertionError("place not found: " + suite);
 			}
 			RealWorld.goTo(context, sp, b.getX(), b.getZ(), 88);
-			int[] start = RealWorld.dryLand(sp, b.getX(), b.getZ(), 30);
-			int sy = RealWorld.surface(sp, start[0], start[1]);
+			int[] start = naturalGround(sp, b.getX(), b.getZ(), 30);
+			if (start == null) throw new AssertionError("no natural ground near " + b.toShortString());
+			int sy = start[2];
 			log.add(suite + " (seed " + seed + "): start " + start[0] + ", " + sy + ", " + start[1]);
 			RealWorld.cmd(sp, "give @a minecraft:bread 16");
 			RealWorld.cmd(sp, "effect give @a minecraft:saturation infinite 0 true");
@@ -76,8 +77,12 @@ public class PathRealTest implements FabricClientGameTest {
 			int[][] dirs = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
 			for (int dist : new int[] {25, 50}) {
 				for (int[] d : dirs) {
-					int[] goal = RealWorld.dryLand(sp, start[0] + d[0] * dist, start[1] + d[1] * dist, 8);
-					int gy = RealWorld.surface(sp, goal[0], goal[1]);
+					int[] goal = naturalGround(sp, start[0] + d[0] * dist, start[1] + d[1] * dist, 16);
+					if (goal == null) {
+						log.add(String.format("%2d m: no natural ground near %d, %d (water or buildings), skipped", dist, start[0] + d[0] * dist, start[1] + d[1] * dist));
+						continue;
+					}
+					int gy = goal[2];
 					BlockPos target = new BlockPos(goal[0], gy, goal[1]);
 					RealWorld.cmd(sp, "tp @a " + (start[0] + 0.5) + " " + sy + " " + (start[1] + 0.5));
 					context.waitTicks(20);
@@ -118,7 +123,7 @@ public class PathRealTest implements FabricClientGameTest {
 			log.add("farmland around the start: " + farmBefore + " -> " + farmAfter);
 			if (farmAfter < farmBefore) failures.add("trampled " + (farmBefore - farmAfter) + " farmland");
 			if (worstTick > 50) failures.add("a walker tick took " + worstTick + " ms");
-			if (arrived * 100 < total * 75) failures.add("arrived only " + arrived + " of " + total);
+			if (total == 0 || arrived * 100 < total * 75) failures.add("arrived only " + arrived + " of " + total);
 		} catch (Throwable t) {
 			failures.add("exception: " + t);
 			throw t;
@@ -126,6 +131,35 @@ public class PathRealTest implements FabricClientGameTest {
 			RealWorld.writeReport("assistpath-" + suite, failures, log);
 		}
 		if (!failures.isEmpty()) throw new AssertionError("Assist Path " + suite + " failed: " + String.join("; ", failures));
+	}
+
+	/**
+	 * A spot a person would walk to: natural ground (grass, dirt, sand, stone...) with room to stand, not water,
+	 * not a roof or a fence. Spiralling out from x/z. {x, z, feetY} or null.
+	 */
+	private static int[] naturalGround(TestSingleplayerContext sp, int x, int z, int radius) {
+		return sp.getServer().computeOnServer(server -> {
+			var level = server.overworld();
+			for (int r = 0; r <= radius; r++) {
+				for (int dx = -r; dx <= r; dx++) {
+					for (int dz = -r; dz <= r; dz++) {
+						if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+						int cx = x + dx, cz = z + dz;
+						int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
+						BlockPos ground = new BlockPos(cx, y - 1, cz);
+						var g = level.getBlockState(ground);
+						boolean natural = g.is(Blocks.GRASS_BLOCK) || g.is(Blocks.DIRT) || g.is(Blocks.COARSE_DIRT) || g.is(Blocks.PODZOL)
+								|| g.is(Blocks.SAND) || g.is(Blocks.GRAVEL) || g.is(Blocks.STONE) || g.is(Blocks.ANDESITE) || g.is(Blocks.GRANITE)
+								|| g.is(Blocks.DIORITE) || g.is(Blocks.DIRT_PATH) || g.is(Blocks.MOSS_BLOCK) || g.is(Blocks.MUD) || g.is(Blocks.SNOW_BLOCK);
+						if (!natural || !level.getFluidState(ground.above()).isEmpty()) continue;
+						if (!level.getBlockState(ground.above()).getCollisionShape(level, ground.above()).isEmpty()) continue;
+						if (!level.getBlockState(ground.above(2)).getCollisionShape(level, ground.above(2)).isEmpty()) continue;
+						return new int[] {cx, cz, y};
+					}
+				}
+			}
+			return null;
+		});
 	}
 
 	private static int farmland(TestSingleplayerContext sp, int x, int z) {

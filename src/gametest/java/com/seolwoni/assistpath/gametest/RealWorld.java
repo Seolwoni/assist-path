@@ -32,7 +32,8 @@ final class RealWorld {
 
 	static String suite() {
 		String s = System.getenv("ASSIST_GT");
-		return s == null || s.isBlank() ? "flat" : s.trim();
+		// "...-nopath" runs the same suite with Assist Path switched off (ASSIST_NO_PATH), for comparison.
+		return s == null || s.isBlank() ? "flat" : s.trim().replace("-nopath", "");
 	}
 
 	/** Other fixed seeds, so one lucky world does not hide a problem. */

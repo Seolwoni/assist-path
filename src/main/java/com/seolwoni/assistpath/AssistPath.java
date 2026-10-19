@@ -47,6 +47,9 @@ import net.minecraft.world.level.Level;
 public final class AssistPath implements ClientModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("Assist Path");
 
+	/** Switch Assist Path off (walkers give up at once, the mods walk straight as before). For side-by-side tests. */
+	public static boolean disabled = "1".equals(System.getenv("ASSIST_NO_PATH"));
+
 	/** One step of a planned route. */
 	public record Step(String kind, BlockPos from, BlockPos to, List<BlockPos> toBreak, List<BlockPos> toPlace, double cost) {
 	}

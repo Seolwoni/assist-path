@@ -95,6 +95,7 @@ public final class PathWalker {
 
 	private int fail(Minecraft mc, String why) {
 		AssistPath.Stats.gaveUp++;
+		com.seolwoni.assistcore.log.UsageLog.event("path", "길 찾기 포기: " + why + " → " + goal + (replans > 0 ? " (다시 계산 " + replans + "번)" : ""));
 		AssistPath.Stats.reasons.merge(why, 1, Integer::sum);
 		if (AssistPath.Stats.gaveUpGoals.size() < 12) AssistPath.Stats.gaveUpGoals.add(goal + " from " + feet(Minecraft.getInstance().player).toShortString());
 		Body.release(mc);
@@ -125,6 +126,10 @@ public final class PathWalker {
 	}
 
 	public int tick(Minecraft mc, LocalPlayer p) {
+		if (AssistPath.disabled) {
+			failReason = "Assist Path 꺼짐";
+			return Action.FAIL;
+		}
 		if (!counted) {
 			counted = true;
 			AssistPath.Stats.walks++;

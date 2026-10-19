@@ -19,6 +19,10 @@ public class CoreConfig {
 
 	/** Every Assist HUD box is hidden (toggled with H). */
 	public boolean hudHidden = false;
+	/** Keep a plain-text usage log in assist-logs/ (what each mod did, why it stopped). Nothing is sent anywhere. */
+	public boolean usageLog = true;
+	/** Delete usage logs older than this many days. */
+	public int usageLogDays = 30;
 
 	public static CoreConfig get() {
 		return instance;
