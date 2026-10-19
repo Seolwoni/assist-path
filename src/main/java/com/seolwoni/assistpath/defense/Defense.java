@@ -290,10 +290,11 @@ public final class Defense {
 		return best;
 	}
 
+	private static final java.util.Set<String> RANGED = java.util.Set.of("skeleton", "stray", "bogged", "pillager", "witch", "blaze", "ghast");
+
 	static boolean ranged(Entity e) {
-		var t = e.getType();
-		return t == net.minecraft.world.entity.EntityType.SKELETON || t == net.minecraft.world.entity.EntityType.STRAY || t == net.minecraft.world.entity.EntityType.BOGGED
-				|| t == net.minecraft.world.entity.EntityType.PILLAGER || t == net.minecraft.world.entity.EntityType.WITCH || t == net.minecraft.world.entity.EntityType.BLAZE;
+		String id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath();
+		return RANGED.contains(id);
 	}
 
 	private static boolean seesSpot(LocalPlayer p, Entity e, BlockPos c) {
