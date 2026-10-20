@@ -45,6 +45,16 @@ public final class Defense {
 		public float fleeHealth = 10f;
 		/** Mobs closer than this make us move away (or fight). */
 		public double keepAway = 7;
+		/**
+		 * Where we may go while getting away or fighting (null: anywhere). A mod sets this when leaving its own
+		 * ground is the bigger danger: the miner stays inside the tunnels it dug instead of running out into a
+		 * cave (where it then cannot find the way back).
+		 */
+		public java.util.function.Predicate<BlockPos> region = null;
+	}
+
+	static boolean inRegion(BlockPos feet) {
+		return config.region == null || config.region.test(feet);
 	}
 
 	public static final Config config = new Config();
@@ -305,6 +315,7 @@ public final class Defense {
 				for (int dy = 3; dy >= -3; dy--) {
 					BlockPos c = new BlockPos(x, me.getY() + dy, z);
 					if (!standable(p, c)) continue;
+					if (!inRegion(c)) break;
 					double nearest = Double.MAX_VALUE;
 					for (Entity e : from) nearest = Math.min(nearest, Math.sqrt(e.blockPosition().distSqr(c)));
 					Vec3 dir = new Vec3(c.getX() - me.getX(), 0, c.getZ() - me.getZ()).normalize();
@@ -328,6 +339,7 @@ public final class Defense {
 	static boolean safeStep(LocalPlayer p, Vec3 dir) {
 		Vec3 at = p.position().add(dir.normalize().scale(0.8));
 		BlockPos feet = BlockPos.containing(at.x, p.getY() + 0.1, at.z);
+		if (!inRegion(feet) && !inRegion(feet.below()) && inRegion(p.blockPosition())) return false;
 		var level = p.level();
 		for (int down = 0; down <= 1; down++) {
 			BlockPos below = feet.below(down + 1);
@@ -352,6 +364,7 @@ public final class Defense {
 	}
 
 	private static boolean standable(LocalPlayer p, BlockPos feet) {
+		if (!inRegion(feet) && inRegion(p.blockPosition())) return false;
 		var level = p.level();
 		var f = level.getBlockState(feet);
 		var h = level.getBlockState(feet.above());
