@@ -84,7 +84,7 @@ jobs:
         run: |
           mkdir -p /tmp/log/gt
           overall=success
-          for s in flat defense real-forest real-hills real-river real-village; do
+          for s in flat defense portable real-forest real-hills real-river real-village; do
             d=arts/gt-$s
             o=$(cat $d/outcome.txt 2>/dev/null || echo failure)
             echo "$s: $o" >> /tmp/log/gt/suites.txt
