@@ -206,7 +206,8 @@ public class RouteWalkAction implements Action {
 			double[] level = new double[1];
 			double run = runLength(p, level);
 			boolean sprint = Human.pace >= 1 && !stroll && run >= 4.0;
-			boolean jump = sprint && hopper && Human.sprintJump && level[0] >= 7.0 && openAbove(p) && !farmlandAhead();
+			// Jumping along is fine up and down one-block steps too (it is how players run up a hill).
+			boolean jump = sprint && hopper && Human.sprintJump && run >= 7.0 && openAbove(p) && !farmlandAhead();
 			// Now and then glance aside, up or down on a straight, level stretch, walking on meanwhile.
 			if (--nextGlance <= 0 && !Body.glancing()) {
 				nextGlance = glanceGap();

@@ -245,7 +245,7 @@ public final class Body {
 		mc.options.keySprint.setDown(run);
 		if (!run && p.isSprinting()) p.setSprinting(false);
 		Vec3 v = p.getDeltaMovement();
-		boolean hop = jump && run && p.isSprinting() && p.onGround() && !p.isInWater() && yawErr < 12f && v.x * v.x + v.z * v.z > 0.04;
+		boolean hop = jump && run && p.isSprinting() && p.onGround() && !p.isInWater() && yawErr < 15f && v.x * v.x + v.z * v.z > 0.03;
 		if (hop) Stats.jumps++;
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
 		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || swimUp(p, dyFeet) || hop);
