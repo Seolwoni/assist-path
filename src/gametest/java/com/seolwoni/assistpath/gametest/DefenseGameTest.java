@@ -74,6 +74,27 @@ public class DefenseGameTest implements FabricClientGameTest {
 					Defense.config.enabled = true;
 					Defense.config.attack = attack;
 				});
+				if (c.name().startsWith("zombie walled in")) {
+					// First stand right at the wall, 2 blocks from the zombie, for two seconds: nothing to do.
+					RealWorld.cmd(sp, "tp @a 1.5 101 15.5 90 0");
+					context.waitTicks(10);
+					int took = 0;
+					for (int k = 0; k < 40; k++) {
+						if (context.computeOnClient(mc -> Defense.guard(mc, mc.player))) took++;
+						context.waitTicks(1);
+					}
+					int unreach = context.computeOnClient(mc -> Defense.Stats.unreachableTicks);
+					double dz = context.computeOnClient(mc -> {
+						double best = 99;
+						for (var e : mc.level.getEntities(mc.player, mc.player.getBoundingBox().inflate(6))) if (e instanceof net.minecraft.world.entity.monster.Zombie) best = Math.min(best, e.distanceTo(mc.player));
+						return best;
+					});
+					log.add(String.format("    at the wall: zombie %.1f blocks away, Defense took over %d of 40 ticks, unreachableTicks=%d", dz, took, unreach));
+					if (took > 0) failures.add(c.name() + ": took over at the wall (" + took + " ticks)");
+					if (unreach == 0) failures.add(c.name() + ": the zombie behind the wall was never looked at (distance " + dz + ")");
+					RealWorld.cmd(sp, "tp @a 0.5 101 0.5 0 10");
+					context.waitTicks(10);
+				}
 				// The "work": walk to the far end of the route and back, again and again.
 				BlockPos[] ends = { new BlockPos(0, 101, 30), new BlockPos(0, 101, 0) };
 				int leg = 0, guarded = 0, worked = 0;
