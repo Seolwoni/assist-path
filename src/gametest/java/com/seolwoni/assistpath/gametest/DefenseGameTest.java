@@ -86,7 +86,7 @@ public class DefenseGameTest implements FabricClientGameTest {
 					int unreach = context.computeOnClient(mc -> Defense.Stats.unreachableTicks);
 					double dz = context.computeOnClient(mc -> {
 						double best = 99;
-						for (var e : mc.level.getEntities(mc.player, mc.player.getBoundingBox().inflate(6))) if (e instanceof net.minecraft.world.entity.monster.Zombie) best = Math.min(best, e.distanceTo(mc.player));
+						for (var e : mc.level.getEntities(mc.player, mc.player.getBoundingBox().inflate(6))) if (net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath().equals("zombie")) best = Math.min(best, e.distanceTo(mc.player));
 						return best;
 					});
 					log.add(String.format("    at the wall: zombie %.1f blocks away, Defense took over %d of 40 ticks, unreachableTicks=%d", dz, took, unreach));
