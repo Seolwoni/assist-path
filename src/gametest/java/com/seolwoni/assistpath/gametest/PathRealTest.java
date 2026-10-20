@@ -71,6 +71,11 @@ public class PathRealTest implements FabricClientGameTest {
 			RealWorld.cmd(sp, "give @a minecraft:bread 16");
 			RealWorld.cmd(sp, "effect give @a minecraft:saturation infinite 0 true");
 			int farmBefore = farmland(sp, start[0], start[1]);
+			// Walk like the mods do: run on long stretches, sprint-jump where it is open (the village has fields: no trampling).
+			context.runOnClient(mc -> {
+				com.seolwoni.assistcore.util.Human.pace = 1;
+				com.seolwoni.assistcore.util.Human.sprintJump = true;
+			});
 
 			int arrived = 0, total = 0, shots = 0;
 			long ticksAll = 0, worstTick = 0;
