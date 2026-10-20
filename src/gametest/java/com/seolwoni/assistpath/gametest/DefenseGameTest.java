@@ -44,11 +44,17 @@ public class DefenseGameTest implements FabricClientGameTest {
 					new Case("zombie, fighting off", "zombie 6 101 6", false, 1000),
 					new Case("skeleton at range", "skeleton -12 101 30", false, 700),
 					new Case("two zombies, fighting off", "zombie -6 101 10|zombie 6 101 14", false, 700),
-					new Case("zombie, fighting on", "zombie 5 101 8", true, 700));
+					new Case("zombie, fighting on", "zombie 5 101 8", true, 700),
+					new Case("zombie walled in beside the route", "zombie 3 101 15", true, 600));
 			int n = 0;
 			for (Case c : cases) {
 				n++;
 				build(sp);
+				if (c.name().startsWith("zombie walled in")) {
+					// A sealed one-block cell 2-3 blocks from the route: the zombie is heard, never seen, cannot get out.
+					RealWorld.cmd(sp, "fill 2 101 14 4 104 16 minecraft:stone");
+					RealWorld.cmd(sp, "fill 3 101 15 3 102 15 minecraft:air");
+				}
 				RealWorld.cmd(sp, "difficulty normal");
 				RealWorld.cmd(sp, "kill @e[type=!player]");
 				RealWorld.cmd(sp, "gamemode survival @a");
@@ -145,9 +151,14 @@ public class DefenseGameTest implements FabricClientGameTest {
 						if (stats.contains("kills=0") && mobsLeft > 0) failures.add(c.name() + ": did not deal with the zombie");
 						if (hits > 4) failures.add(c.name() + ": hit " + hits + " times (more than 4)");
 					}
+					case 6 -> {
+						// Like a zombie in the cave behind the tunnel wall: no reason to stop working.
+						if (guarded > 0) failures.add(c.name() + ": took over " + guarded + " ticks for a mob that cannot get out");
+					}
 					default -> {
 					}
 				}
+				for (String ev : context.computeOnClient(mc -> new ArrayList<>(Defense.Stats.events))) log.add("    event: " + ev);
 			}
 			context.runOnClient(mc -> Defense.config.attack = false);
 		} catch (Throwable t) {

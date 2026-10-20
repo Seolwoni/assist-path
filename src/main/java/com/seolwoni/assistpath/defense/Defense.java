@@ -52,15 +52,21 @@ public final class Defense {
 	/** What happened this session (for the HUD, the tests and the usage log). */
 	public static final class Stats {
 		public static int flees, dodges, creeperEscapes, fights, kills, hitsTaken;
+		/** Ticks a mob was close but could not get to us (behind a wall), so it was left alone; fights given up. */
+		public static int unreachableTicks, fightsGivenUp;
+		/** The last few times Defense took over: when, what, which mob, how far, whether it could see us. */
+		public static final java.util.ArrayDeque<String> events = new java.util.ArrayDeque<>();
 		public static float lowestHealth = 20f;
 
 		public static String summary() {
 			return "defense: flees=" + flees + " dodges=" + dodges + " creeperEscapes=" + creeperEscapes + " fights=" + fights + " kills=" + kills
-					+ " hitsTaken=" + hitsTaken + " lowestHealth=" + lowestHealth;
+					+ " hitsTaken=" + hitsTaken + " lowestHealth=" + lowestHealth + " unreachableTicks=" + unreachableTicks + " fightsGivenUp=" + fightsGivenUp;
 		}
 
 		public static void reset() {
 			flees = dodges = creeperEscapes = fights = kills = hitsTaken = 0;
+			unreachableTicks = fightsGivenUp = 0;
+			events.clear();
 			lowestHealth = 20f;
 		}
 	}
@@ -74,6 +80,8 @@ public final class Defense {
 	private static PathWalker walker;
 	private static BlockPos fleeTo;
 	private static Entity target;
+	/** Swings at the current target and ticks spent on it: a fight with no swing for 3 s is given up. */
+	private static int swings, targetTicks;
 	private static String status = "";
 
 	/** What Defense is doing right now (empty when nothing). */
@@ -143,7 +151,10 @@ public final class Defense {
 			return false;
 		}
 		calm = 0;
-		if (want != mode) begin(mc, p, want, arrow);
+		if (want != mode) {
+			begin(mc, p, want, arrow);
+			note(p, want, creeper != null ? List.of(creeper) : near);
+		}
 		modeTicks++;
 		switch (mode) {
 			case CREEPER -> flee(mc, p, List.of(creeper), true);
@@ -204,6 +215,19 @@ public final class Defense {
 			}
 		}
 		mode = m;
+	}
+
+	/** For the tests and the usage log: what made us act. */
+	private static void note(LocalPlayer p, Mode m, List<Entity> why) {
+		StringBuilder sb = new StringBuilder(m.name().toLowerCase());
+		sb.append(" at ").append(p.blockPosition().toShortString());
+		for (Entity e : why) {
+			String id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath();
+			sb.append(" | ").append(id).append(' ').append(String.format("%.1f", e.distanceTo(p))).append(p.hasLineOfSight(e) ? " seen" : " unseen");
+			if (sb.length() > 200) break;
+		}
+		Stats.events.addLast(sb.toString());
+		while (Stats.events.size() > 40) Stats.events.removeFirst();
 	}
 
 	private static void end(Minecraft mc) {
@@ -376,6 +400,19 @@ public final class Defense {
 				}
 			}
 			if (target == null) return;
+			swings = 0;
+			targetTicks = 0;
+		}
+		if (++targetTicks > 60 && swings == 0) {
+			// Three seconds without being able to swing at it (out of reach behind something, or we cannot step
+			// closer without going over an edge): leave it be, unless it comes right up to us.
+			Stats.fightsGivenUp++;
+			Threats.ignore(p, target, 200);
+			log("닿지 않는 몹이라 싸우기를 그만뒀어요");
+			target = null;
+			mc.options.keyUp.setDown(false);
+			mc.options.keyDown.setDown(false);
+			return;
 		}
 		int slot = weaponSlot(p);
 		if (slot >= 0) InvBase.select(p, slot);
@@ -391,6 +428,7 @@ public final class Defense {
 		if (onTarget && d <= 3.0 && p.getAttackStrengthScale(0.5f) >= 0.95f && mc.gameMode != null) {
 			mc.gameMode.attack(p, target);
 			p.swing(InteractionHand.MAIN_HAND);
+			swings++;
 		}
 	}
 }
