@@ -100,11 +100,39 @@ public class RouteWalkAction implements Action {
 		return true;
 	}
 
-	private double runLength(LocalPlayer p, int straight) {
-		BlockPos c = route.get(idx);
-		if (Math.abs(p.getY() - c.getY()) > 0.3) return 0;
-		double dx = c.getX() + 0.5 - p.getX(), dz = c.getZ() + 0.5 - p.getZ();
-		return Math.sqrt(dx * dx + dz * dz) + straight;
+	/**
+	 * How far the way goes on from here without a sharp turn: along the route from the player, through the cells
+	 * ahead, until it bends more than 50 degrees from where we are heading or climbs or drops more than a block at
+	 * once (slopes with one-block steps are fine: people run up and down hills). {@code level[0]} is set to how far
+	 * of that is flat.
+	 */
+	private double runLength(LocalPlayer p, double[] level) {
+		double x = p.getX(), z = p.getZ();
+		double hx = 0, hz = 0, total = 0;
+		int y = route.get(idx).getY();
+		boolean flat = Math.abs(p.getY() - y) < 0.3;
+		level[0] = 0;
+		for (int i = idx; i < Math.min(route.size(), idx + 16); i++) {
+			BlockPos c = route.get(i);
+			if (Math.abs(c.getY() - y) > 1) break;
+			if (c.getY() != y) flat = false;
+			y = c.getY();
+			if (Blocks2.isWater(c) || Blocks2.isWater(c.below())) break;
+			double dx = c.getX() + 0.5 - x, dz = c.getZ() + 0.5 - z;
+			double len = Math.sqrt(dx * dx + dz * dz);
+			if (len < 0.01) continue;
+			if (hx == 0 && hz == 0) {
+				hx = dx / len;
+				hz = dz / len;
+			} else if ((dx * hx + dz * hz) / len < 0.64) {
+				break; // turns more than about 50 degrees
+			}
+			total += len;
+			if (flat) level[0] = total;
+			x = c.getX() + 0.5;
+			z = c.getZ() + 0.5;
+		}
+		return total;
 	}
 
 	/** Room for a jump (two free cells over the head) along the next stretch: never bump into a tunnel roof. */
@@ -175,9 +203,10 @@ public class RouteWalkAction implements Action {
 			int straight = straightAhead(idx);
 			// How far the way runs on level and open from here: to the cell we head for in a straight line (corners
 			// cut), then on along the same line. Long enough: run; very long and open above: run and jump along.
-			double run = runLength(p, straight);
+			double[] level = new double[1];
+			double run = runLength(p, level);
 			boolean sprint = Human.pace >= 1 && !stroll && run >= 4.0;
-			boolean jump = sprint && hopper && Human.sprintJump && run >= 7.0 && openAbove(p) && !farmlandAhead();
+			boolean jump = sprint && hopper && Human.sprintJump && level[0] >= 7.0 && openAbove(p) && !farmlandAhead();
 			// Now and then glance aside, up or down on a straight, level stretch, walking on meanwhile.
 			if (--nextGlance <= 0 && !Body.glancing()) {
 				nextGlance = glanceGap();
