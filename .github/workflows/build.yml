@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [flat, defense, real-forest, real-hills, real-river, real-village]
+        suite: [flat, defense, portable, real-forest, real-hills, real-river, real-village]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

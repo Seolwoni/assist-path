@@ -5,7 +5,7 @@
 	"name": "Assist Path Game Tests",
 	"environment": "client",
 	"entrypoints": {
-		"fabric-client-gametest": ["com.seolwoni.assistpath.gametest.PathGameTest", "com.seolwoni.assistpath.gametest.PathRealTest", "com.seolwoni.assistpath.gametest.DefenseGameTest"]
+		"fabric-client-gametest": ["com.seolwoni.assistpath.gametest.PathGameTest", "com.seolwoni.assistpath.gametest.PathRealTest", "com.seolwoni.assistpath.gametest.DefenseGameTest", "com.seolwoni.assistpath.gametest.PortableGameTest"]
 	},
 	"depends": {
 		"assistpath": "*"
