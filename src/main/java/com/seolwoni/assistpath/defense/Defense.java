@@ -171,6 +171,9 @@ public final class Defense {
 		if (!config.attack || p.getHealth() <= config.fleeHealth) return false;
 		if (near.size() > 2) return false;
 		for (Entity e : near) if (e instanceof Creeper) return false;
+		// A skeleton a few blocks off keeps shooting while we walk up to it (night mine test: 8 arrows taken in a
+		// cave): only fight one that is already close; otherwise get behind cover.
+		for (Entity e : near) if (ranged(e) && e.distanceTo(p) > 3.5) return false;
 		return weaponSlot(p) >= 0;
 	}
 
