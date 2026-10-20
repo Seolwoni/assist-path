@@ -22,6 +22,9 @@ public class RouteWalkAction implements Action {
 	private final List<BlockPos> route;
 	private int idx, onCell, pre = -1, post = -1, lookTicks, nextGlance;
 	private Set<BlockPos> cellSet;
+	/** This walk: just walk, no running (people do not always run), and whether long stretches are sprint-jumped. */
+	private final boolean stroll = Human.RANDOM.nextDouble() < 0.12, hopper = Human.RANDOM.nextDouble() < 0.6;
+	private Vec3 lastPos;
 
 	public RouteWalkAction(List<BlockPos> route) {
 		this.route = route;
@@ -97,9 +100,45 @@ public class RouteWalkAction implements Action {
 		return true;
 	}
 
+	private double runLength(LocalPlayer p, int straight) {
+		BlockPos c = route.get(idx);
+		if (Math.abs(p.getY() - c.getY()) > 0.3) return 0;
+		double dx = c.getX() + 0.5 - p.getX(), dz = c.getZ() + 0.5 - p.getZ();
+		return Math.sqrt(dx * dx + dz * dz) + straight;
+	}
+
+	/** Room for a jump (two free cells over the head) along the next stretch: never bump into a tunnel roof. */
+	private boolean openAbove(LocalPlayer p) {
+		BlockPos f = p.blockPosition();
+		for (int k = 2; k <= 3; k++) if (!Blocks2.passable(f.above(k))) return false;
+		for (int i = idx; i < Math.min(route.size(), idx + 4); i++) {
+			BlockPos c = route.get(i);
+			for (int k = 2; k <= 3; k++) if (!Blocks2.passable(c.above(k))) return false;
+		}
+		return true;
+	}
+
+	/** Landing from a jump onto farmland tramples it. */
+	private boolean farmlandAhead() {
+		for (int i = Math.max(0, idx - 1); i < Math.min(route.size(), idx + 5); i++) {
+			if (Blocks2.state(route.get(i).below()).is(net.minecraft.world.level.block.Blocks.FARMLAND)) return true;
+		}
+		return false;
+	}
+
 	@Override
 	public int tick(Minecraft mc, LocalPlayer p) {
 		if (route.isEmpty()) return DONE;
+		Vec3 now = p.position();
+		if (lastPos != null && lookTicks < 0) {
+			double d = Math.sqrt((now.x - lastPos.x) * (now.x - lastPos.x) + (now.z - lastPos.z) * (now.z - lastPos.z));
+			if (d < 1.5) {
+				Body.Stats.walked += d;
+				Body.Stats.moveTicks++;
+				if (p.isSprinting()) Body.Stats.sprintTicks++;
+			}
+		}
+		lastPos = now;
 		if (cellSet == null) cellSet = new HashSet<>(route);
 		if (idx < route.size() - 1) {
 			int k = farthestInSight(p);
@@ -134,7 +173,11 @@ public class RouteWalkAction implements Action {
 			}
 		} else {
 			int straight = straightAhead(idx);
-			boolean sprint = Human.pace >= 1 && straight >= 3;
+			// How far the way runs on level and open from here: to the cell we head for in a straight line (corners
+			// cut), then on along the same line. Long enough: run; very long and open above: run and jump along.
+			double run = runLength(p, straight);
+			boolean sprint = Human.pace >= 1 && !stroll && run >= 4.0;
+			boolean jump = sprint && hopper && Human.sprintJump && run >= 7.0 && openAbove(p) && !farmlandAhead();
 			// Now and then glance aside, up or down on a straight, level stretch, walking on meanwhile.
 			if (--nextGlance <= 0 && !Body.glancing()) {
 				nextGlance = glanceGap();
@@ -147,7 +190,7 @@ public class RouteWalkAction implements Action {
 					Body.glance(side, pitch, Human.rand(8, 18));
 				}
 			}
-			if (Body.walkThrough(p, route.get(idx), route.get(idx + 1), sprint)) {
+			if (Body.walkThrough(p, route.get(idx), route.get(idx + 1), sprint, jump)) {
 				idx++;
 				onCell = 0;
 				return RUN;

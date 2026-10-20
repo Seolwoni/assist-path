@@ -87,7 +87,8 @@ public final class AssistPath implements ClientModInitializer {
 
 		public static String summary() {
 			return "path: walks=" + walks + " arrived=" + arrived + " gaveUp=" + gaveUp + " " + reasons + " plans=" + plans
-					+ " notFound=" + failed + " gaveUpGoals=" + gaveUpGoals + " waitTicks=" + waitTicks + " walkTicks=" + walkTicks + " slowestPlan=" + maxMillis + "ms";
+					+ " notFound=" + failed + " gaveUpGoals=" + gaveUpGoals + " waitTicks=" + waitTicks + " walkTicks=" + walkTicks + " slowestPlan=" + maxMillis + "ms"
+					+ "\n" + com.seolwoni.assistcore.util.Body.Stats.summary();
 		}
 	}
 

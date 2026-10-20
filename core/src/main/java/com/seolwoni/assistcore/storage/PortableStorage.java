@@ -60,6 +60,8 @@ public final class PortableStorage implements Action {
 	private static final double REACH = 4.3;
 	/** Shulker boxes found full in this session (same contents = same components): not tried again. */
 	private static final List<ItemStack> FULL = new ArrayList<>();
+	/** Finished trips that put something away, this session (for the HUD and the tests). */
+	public static int trips;
 	/** Ender chests this mod put down and had to leave. */
 	private static final List<BlockPos> LEFT = new ArrayList<>();
 
@@ -449,6 +451,7 @@ public final class PortableStorage implements Action {
 				String what = kind == Kind.SHULKER ? "셜커 상자" : "엔더 상자";
 				Alerts.actionBar(what + "에 보관 (" + moved + "칸)" + (kind == Kind.ENDER_LEAVE ? " · 엔더 상자는 " + box.toShortString() + "에 두었어요" : ""), 0xFF55FF55);
 				UsageLog.event(mod, what + "에 보관 " + moved + "칸");
+				if (moved > 0) trips++;
 				return DONE;
 			}
 		}

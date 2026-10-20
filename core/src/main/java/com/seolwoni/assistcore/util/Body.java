@@ -178,6 +178,30 @@ public final class Body {
 	 * the forward key down and jumps up steps. Returns true once {@code cell} has been passed.
 	 */
 	public static boolean walkThrough(LocalPlayer p, BlockPos cell, BlockPos next, boolean sprint) {
+		return walkThrough(p, cell, next, sprint, false);
+	}
+
+	/** Walking numbers for the tests: how far and how fast routes are walked. */
+	public static final class Stats {
+		public static double walked;
+		public static int moveTicks, sprintTicks, jumps;
+
+		public static String summary() {
+			return String.format("walk: %.0f blocks in %.0f s = %.2f blocks/s, sprinting %d%%, sprint-jumps %d", walked, moveTicks / 20.0,
+					moveTicks > 0 ? walked / (moveTicks / 20.0) : 0, moveTicks > 0 ? 100 * sprintTicks / moveTicks : 0, jumps);
+		}
+
+		public static void reset() {
+			walked = 0;
+			moveTicks = sprintTicks = jumps = 0;
+		}
+	}
+
+	/**
+	 * As {@link #walkThrough(LocalPlayer, BlockPos, BlockPos, boolean)}; {@code jump}: the way ahead is long, level and
+	 * open above, so jump along while sprinting (the quick way players cover open ground).
+	 */
+	public static boolean walkThrough(LocalPlayer p, BlockPos cell, BlockPos next, boolean sprint, boolean jump) {
 		Minecraft mc = Minecraft.getInstance();
 		walkTicks++;
 		Vec3 pos = p.position();
@@ -216,11 +240,15 @@ public final class Body {
 		// Keep walking while turning a corner, like a person does (only stop for a sharp turn).
 		// (close to the cell only when facing it, or it would circle round it).
 		mc.options.keyUp.setDown(yawErr < (dist > 2.0 ? 75f : dist > 1.0 ? 45f : 30f));
-		boolean run = sprint && !glance && yawErr < 20f && p.getFoodData().getFoodLevel() > 6;
+		// Keep running through a gentle bend (a person does not let go of sprint for every few degrees).
+		boolean run = sprint && !glance && yawErr < (dist > 1.5 ? 30f : 20f) && p.getFoodData().getFoodLevel() > 6;
 		mc.options.keySprint.setDown(run);
 		if (!run && p.isSprinting()) p.setSprinting(false);
+		Vec3 v = p.getDeltaMovement();
+		boolean hop = jump && run && p.isSprinting() && p.onGround() && !p.isInWater() && yawErr < 12f && v.x * v.x + v.z * v.z > 0.04;
+		if (hop) Stats.jumps++;
 		// Swim: keep the head above water (and climb out of a water hole onto the next cell).
-		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || swimUp(p, dyFeet));
+		mc.options.keyJump.setDown((dyFeet > 0.5 && p.onGround()) || swimUp(p, dyFeet) || hop);
 		return false;
 	}
 

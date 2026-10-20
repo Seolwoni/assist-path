@@ -14,6 +14,8 @@ public final class Human {
 
 	/** Work pace chosen in a mod's settings: 0 = relaxed (slowest, most human), 1 = normal, 2 = fast. */
 	public static int pace = 0;
+	/** Sprint-jump on long open stretches like players do (a farm turns it off: landing tramples farmland). */
+	public static boolean sprintJump = true;
 
 	private static final double[] DELAY_SCALE = {1.0, 0.6, 0.3};
 	private static final float[] TURN_SCALE = {1.0f, 1.25f, 1.6f};
