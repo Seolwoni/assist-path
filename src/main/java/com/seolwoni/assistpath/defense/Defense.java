@@ -251,11 +251,13 @@ public final class Defense {
 			fleeTo = null;
 			replan = 0;
 		}
-		// No way out found: back away from the nearest one, facing it (like a player would).
+		// No way out found: back away from the nearest one, facing it (like a player would), but not off an edge.
 		Entity n = from.get(0);
 		Body.lookAt(p, n.getEyePosition(), 6f);
+		double yaw = Math.toRadians(p.getYRot());
+		Vec3 back = new Vec3(Math.sin(yaw), 0, -Math.cos(yaw));
 		mc.options.keyUp.setDown(false);
-		mc.options.keyDown.setDown(true);
+		mc.options.keyDown.setDown(safeStep(p, back));
 	}
 
 	/** A standable cell 8 to 14 blocks away that keeps the most distance from every threat. */
@@ -294,6 +296,20 @@ public final class Defense {
 	}
 
 	private static final java.util.Set<String> RANGED = java.util.Set.of("skeleton", "stray", "bogged", "pillager", "witch", "blaze", "ghast");
+
+	/** Ground under the next step in this direction (at most one block down): no walking off ledges or into holes. */
+	static boolean safeStep(LocalPlayer p, Vec3 dir) {
+		Vec3 at = p.position().add(dir.normalize().scale(0.8));
+		BlockPos feet = BlockPos.containing(at.x, p.getY() + 0.1, at.z);
+		var level = p.level();
+		for (int down = 0; down <= 1; down++) {
+			BlockPos below = feet.below(down + 1);
+			var st = level.getBlockState(below);
+			if (!st.getFluidState().isEmpty() && st.getFluidState().is(net.minecraft.tags.FluidTags.LAVA)) return false;
+			if (st.isFaceSturdy(level, below, net.minecraft.core.Direction.UP)) return true;
+		}
+		return false;
+	}
 
 	static boolean ranged(Entity e) {
 		String id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath();
@@ -366,9 +382,12 @@ public final class Defense {
 		Vec3 aim = target.position().add(0, target.getBbHeight() * 0.6, 0);
 		boolean onTarget = Body.lookAt(p, aim, 8f);
 		double d = target.distanceTo(p);
-		// Keep at arm's length: step in when too far, back off when it gets too close.
-		mc.options.keyUp.setDown(d > 2.8);
-		mc.options.keyDown.setDown(d < 1.6);
+		// Keep at arm's length: step in when too far, back off when it gets too close, but never off an edge
+		// (a fight must not end with a fall into a cave or out of the tunnel).
+		double yaw = Math.toRadians(p.getYRot());
+		Vec3 fwd = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
+		mc.options.keyUp.setDown(d > 2.8 && safeStep(p, fwd));
+		mc.options.keyDown.setDown(d < 1.6 && safeStep(p, fwd.scale(-1)));
 		if (onTarget && d <= 3.0 && p.getAttackStrengthScale(0.5f) >= 0.95f && mc.gameMode != null) {
 			mc.gameMode.attack(p, target);
 			p.swing(InteractionHand.MAIN_HAND);
