@@ -86,7 +86,8 @@ public final class Defense {
 	private static Mode mode = Mode.NONE;
 	private static int modeTicks, calm, dodgeTicks, replan, lastHurt, chased, quiet;
 	private static String giveUp;
-	private static boolean dodgeLeft;
+	private static boolean dodgeLeft, dodgeHold;
+	private static Vec3 dodgeDir;
 	private static PathWalker walker;
 	private static BlockPos fleeTo;
 	private static Entity target;
@@ -210,8 +211,13 @@ public final class Defense {
 				double yaw = Math.toRadians(p.getYRot());
 				Vec3 left = new Vec3(Math.cos(yaw), 0, Math.sin(yaw));
 				Vec3 across = arrow == null ? left : new Vec3(-arrow.z, 0, arrow.x).normalize();
-				boolean freeA = standable(p, BlockPos.containing(p.position().add(across.scale(1.2)))), freeB = standable(p, BlockPos.containing(p.position().subtract(across.scale(1.2))));
-				Vec3 go = freeA || !freeB ? across : across.scale(-1);
+				boolean freeA = standable(p, BlockPos.containing(p.position().add(across.scale(1.2)))) && safeStep(p, across),
+						freeB = standable(p, BlockPos.containing(p.position().subtract(across.scale(1.2)))) && safeStep(p, across.scale(-1));
+				// Neither side has ground (a bridge over a cave, a ledge): do not step off it to dodge. Crouch and take
+				// the arrow instead, the way a player on a narrow bridge would.
+				dodgeHold = !freeA && !freeB;
+				Vec3 go = freeA ? across : across.scale(-1);
+				dodgeDir = go;
 				dodgeLeft = go.dot(left) > 0;
 			}
 			case FIGHT -> {
@@ -245,6 +251,8 @@ public final class Defense {
 
 	private static void end(Minecraft mc) {
 		Body.release(mc);
+		if (dodgeHold) mc.options.keyShift.setDown(false);
+		dodgeHold = false;
 		Body.resetWalk();
 		Body.newTurn();
 		mode = Mode.NONE;
@@ -380,13 +388,23 @@ public final class Defense {
 	private static void dodge(Minecraft mc, LocalPlayer p) {
 		if (dodgeTicks-- <= 0) {
 			Body.release(mc);
+			if (dodgeHold) mc.options.keyShift.setDown(false);
+			dodgeHold = false;
 			mode = Mode.NONE;
 			return;
 		}
 		mc.options.keyUp.setDown(false);
+		mc.options.keySprint.setDown(false);
+		// Every tick: still ground on that side (and still inside where we may go)? If not, stop and crouch.
+		if (dodgeHold || dodgeDir == null || !safeStep(p, dodgeDir)) {
+			dodgeHold = true;
+			mc.options.keyLeft.setDown(false);
+			mc.options.keyRight.setDown(false);
+			mc.options.keyShift.setDown(true);
+			return;
+		}
 		mc.options.keyLeft.setDown(dodgeLeft);
 		mc.options.keyRight.setDown(!dodgeLeft);
-		mc.options.keySprint.setDown(false);
 	}
 
 	// ------------------------------------------------------------------ fight

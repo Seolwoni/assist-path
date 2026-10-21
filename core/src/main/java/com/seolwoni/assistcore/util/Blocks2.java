@@ -70,7 +70,23 @@ public final class Blocks2 {
 		BlockState s = state(p);
 		if (!s.getFluidState().isEmpty()) return false;
 		if (s.is(net.minecraft.tags.BlockTags.FIRE) || s.is(Blocks.SWEET_BERRY_BUSH) || s.is(Blocks.COBWEB) || s.is(Blocks.POWDER_SNOW)) return false;
-		return s.getCollisionShape(level(), p).isEmpty();
+		var shape = s.getCollisionShape(level(), p);
+		// A carpet (moss carpet in lush caves) is walked over, not bumped into.
+		return shape.isEmpty() || shape.max(net.minecraft.core.Direction.Axis.Y) <= 0.0625 + 1e-6;
+	}
+
+	/**
+	 * Cover that is no wall: moss and wool carpets, cave vines (glow berries), hanging roots, glow lichen, spore
+	 * blossoms, small dripleaf, petals, rails and the like: not a full block, nothing or almost nothing to stand
+	 * against. A cave opening hung with vines is still an opening (mobs walk through), so walls go there.
+	 */
+	public static boolean isSoftCover(BlockPos p) {
+		BlockState s = state(p);
+		if (s.isAir() || !s.getFluidState().isEmpty()) return false;
+		if (s.is(Blocks.TORCH) || s.is(Blocks.WALL_TORCH)) return false;
+		if (s.isCollisionShapeFullBlock(level(), p)) return false;
+		var shape = s.getCollisionShape(level(), p);
+		return shape.isEmpty() || shape.max(net.minecraft.core.Direction.Axis.Y) <= 0.1875 + 1e-6;
 	}
 
 	/** A cell a player can simply walk across: room for feet and head, and something safe to stand on. */

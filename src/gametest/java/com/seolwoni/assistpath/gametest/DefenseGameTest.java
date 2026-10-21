@@ -45,7 +45,8 @@ public class DefenseGameTest implements FabricClientGameTest {
 					new Case("skeleton at range", "skeleton -12 101 30", false, 700),
 					new Case("two zombies, fighting off", "zombie -6 101 10|zombie 6 101 14", false, 700),
 					new Case("zombie, fighting on", "zombie 5 101 8", true, 700),
-					new Case("zombie walled in beside the route", "zombie 3 101 15", true, 600));
+					new Case("zombie walled in beside the route", "zombie 3 101 15", true, 600),
+					new Case("skeleton shooting at the bridge", "skeleton 8 101 24", false, 700));
 			int n = 0;
 			int attempt = 1;
 			for (int ci = 0; ci < cases.size(); ci++) {
@@ -57,6 +58,12 @@ public class DefenseGameTest implements FabricClientGameTest {
 					// A sealed one-block cell 2-3 blocks from the route: the zombie is heard, never seen, cannot get out.
 					RealWorld.cmd(sp, "fill 2 101 14 4 104 16 minecraft:stone");
 					RealWorld.cmd(sp, "fill 3 101 15 3 102 15 minecraft:air");
+				}
+				if (c.name().startsWith("skeleton shooting at the bridge")) {
+					// A pit six deep across the route, crossed by a one-block bridge: dodging an arrow must never step off.
+					RealWorld.cmd(sp, "fill -20 94 12 20 100 18 minecraft:air");
+					RealWorld.cmd(sp, "fill -20 93 12 20 93 18 minecraft:stone");
+					RealWorld.cmd(sp, "fill 0 100 12 0 100 18 minecraft:stone");
 				}
 				RealWorld.cmd(sp, "difficulty normal");
 				RealWorld.cmd(sp, "kill @e[type=!player]");
@@ -103,6 +110,7 @@ public class DefenseGameTest implements FabricClientGameTest {
 				int leg = 0, guarded = 0, worked = 0;
 				final PathWalker[] walker = { new PathWalker(new GoalBlock(ends[0])) };
 				float minHp = 20f;
+				double minY = 999;
 				double minCreeper = 99;
 				boolean died = false;
 				for (int t = 0; t < c.ticks(); t++) {
@@ -120,6 +128,7 @@ public class DefenseGameTest implements FabricClientGameTest {
 					}
 					context.waitTicks(1);
 					float hp = context.computeOnClient(mc -> mc.player.getHealth());
+				minY = Math.min(minY, context.computeOnClient(mc -> mc.player.getY()));
 					minHp = Math.min(minHp, hp);
 					if (hp <= 0) {
 						died = true;
@@ -174,6 +183,10 @@ public class DefenseGameTest implements FabricClientGameTest {
 					case 5 -> {
 						if (stats.contains("kills=0") && mobsLeft > 0) failures.add(c.name() + ": did not deal with the zombie");
 						if (hits > 4) failures.add(c.name() + ": hit " + hits + " times (more than 4)");
+					}
+					case 7 -> {
+						log.add(String.format("    lowest feet height %.1f (bridge at 101)", minY));
+						if (minY < 100.5) failures.add(c.name() + ": fell off the bridge (down to y " + String.format("%.1f", minY) + ")");
 					}
 					case 6 -> {
 						// Like a zombie in the cave behind the tunnel wall: no reason to stop working.

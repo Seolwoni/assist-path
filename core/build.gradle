@@ -5,7 +5,7 @@ plugins {
 	id 'net.fabricmc.fabric-loom'
 }
 
-version = '1.7.0'
+version = '1.7.2'
 group = 'com.seolwoni.assistcore'
 
 base {

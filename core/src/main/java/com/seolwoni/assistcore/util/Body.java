@@ -263,6 +263,11 @@ public final class Body {
 
 	public static void release(Minecraft mc) {
 		mc.options.keyUp.setDown(false);
+		// Back and sideways too (Defense backs off and steps aside): left held down, the player kept drifting
+		// sideways after a dodge, off a bridge or out of the tunnel into a cave.
+		mc.options.keyDown.setDown(false);
+		mc.options.keyLeft.setDown(false);
+		mc.options.keyRight.setDown(false);
 		mc.options.keyJump.setDown(false);
 		mc.options.keyAttack.setDown(false);
 		mc.options.keySprint.setDown(false);
