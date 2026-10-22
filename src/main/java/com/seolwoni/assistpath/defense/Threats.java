@@ -51,7 +51,7 @@ public final class Threats {
 		AABB box = p.getBoundingBox().inflate(range);
 		long now = p.level().getGameTime();
 		for (Entity e : p.level().getEntities(p, box)) {
-			if (!(e instanceof Enemy) || !e.isAlive() || e instanceof NeutralMob) continue;
+			if (!(e instanceof Enemy) || !e.isAlive() || e instanceof NeutralMob || calmPiglin(e)) continue;
 			double d = e.distanceTo(p);
 			if (d > range) continue;
 			boolean sees = p.hasLineOfSight(e);
@@ -74,6 +74,16 @@ public final class Threats {
 	static void ignore(LocalPlayer p, Entity e, int ticks) {
 		IGNORE.put(e.getId(), p.level().getGameTime() + ticks);
 		if (IGNORE.size() > 64) IGNORE.values().removeIf(t -> t < p.level().getGameTime());
+	}
+
+	/**
+	 * A piglin that is not after us (we wear gold): leave it alone, hitting one angers all of them. One that is
+	 * after us (no gold, or angered) shows it (aggressive) and counts as any other mob.
+	 */
+	public static boolean calmPiglin(Entity e) {
+		if (!(e instanceof net.minecraft.world.entity.Mob m)) return false;
+		String id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath();
+		return id.equals("piglin") && !m.isAggressive();
 	}
 
 	private static boolean climber(Entity e) {
@@ -194,7 +204,7 @@ public final class Threats {
 		if (p == null || p.level() == null) return List.of();
 		List<Entity> list = new ArrayList<>();
 		for (Entity e : p.level().getEntities(p, p.getBoundingBox().inflate(40))) {
-			if (!(e instanceof Enemy) || !e.isAlive() || e instanceof NeutralMob) continue;
+			if (!(e instanceof Enemy) || !e.isAlive() || e instanceof NeutralMob || calmPiglin(e)) continue;
 			if (e.distanceTo(p) > 40 || !p.hasLineOfSight(e)) continue;
 			list.add(e);
 		}

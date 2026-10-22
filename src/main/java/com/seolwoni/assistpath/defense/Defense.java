@@ -182,6 +182,8 @@ public final class Defense {
 		if (!config.attack || p.getHealth() <= config.fleeHealth) return false;
 		if (near.size() > 2) return false;
 		for (Entity e : near) if (e instanceof Creeper) return false;
+		// Never walk up to these: a wither skeleton withers, a ghast floats out of reach. Get away from them.
+		for (Entity e : near) if (NO_FIGHT.contains(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath())) return false;
 		// A skeleton a few blocks off keeps shooting while we walk up to it (night mine test: 8 arrows taken in a
 		// cave): only fight one that is already close; otherwise get behind cover.
 		for (Entity e : near) if (ranged(e) && e.distanceTo(p) > 3.5) return false;
@@ -341,6 +343,7 @@ public final class Defense {
 		return best;
 	}
 
+	private static final java.util.Set<String> NO_FIGHT = java.util.Set.of("wither_skeleton", "ghast");
 	private static final java.util.Set<String> RANGED = java.util.Set.of("skeleton", "stray", "bogged", "pillager", "witch", "blaze", "ghast");
 
 	/** Ground under the next step in this direction (at most one block down): no walking off ledges or into holes. */
