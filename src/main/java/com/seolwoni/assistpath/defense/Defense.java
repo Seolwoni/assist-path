@@ -87,6 +87,7 @@ public final class Defense {
 	private static int modeTicks, calm, dodgeTicks, replan, lastHurt, chased, quiet;
 	private static String giveUp;
 	private static boolean dodgeLeft, dodgeHold;
+	private static int holdExtra;
 	private static Vec3 dodgeDir;
 	private static PathWalker walker;
 	private static BlockPos fleeTo;
@@ -209,6 +210,7 @@ public final class Defense {
 				Stats.dodges++;
 				status = "화살을 피하는 중";
 				dodgeTicks = Human.rand(6, 9);
+				holdExtra = 0;
 				// Step across the arrow's line: sideways to its flight, on whichever side is free.
 				double yaw = Math.toRadians(p.getYRot());
 				Vec3 left = new Vec3(Math.cos(yaw), 0, Math.sin(yaw));
@@ -389,6 +391,13 @@ public final class Defense {
 	// ------------------------------------------------------------------ dodge
 
 	private static void dodge(Minecraft mc, LocalPlayer p) {
+		// Crouching on a narrow bridge: stay down while the shot is still on its way (a ghast fireball is slow, and
+		// its blast is what throws us off), at most two more seconds.
+		if (dodgeTicks <= 0 && dodgeHold && holdExtra < 40 && Threats.incoming(p, 40, 3.0) != null) {
+			holdExtra++;
+			mc.options.keyShift.setDown(true);
+			return;
+		}
 		if (dodgeTicks-- <= 0) {
 			Body.release(mc);
 			if (dodgeHold) mc.options.keyShift.setDown(false);
