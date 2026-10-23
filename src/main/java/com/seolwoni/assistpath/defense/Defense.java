@@ -127,7 +127,7 @@ public final class Defense {
 
 		if (mode == Mode.FIGHT && target != null && !target.isAlive()) {
 			Stats.kills++;
-			log("몹을 처치했어요");
+			log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
 			target = null;
 		}
 		Creeper creeper = Threats.nearCreeper(p, mode == Mode.CREEPER ? 9 : 6);
@@ -137,8 +137,8 @@ public final class Defense {
 		// Being chased: count every tick while running away (the calm pauses in between too).
 		if (mode == Mode.FLEE || mode == Mode.CREEPER) {
 			if (++chased > 20 * 40 && giveUp == null) {
-				giveUp = "몹이 계속 따라와요";
-				log("몹이 40초 넘게 따라와서 작업을 멈췄어요");
+				giveUp = com.seolwoni.assistcore.i18n.Tr.t("몹이 계속 따라와요");
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹이 40초 넘게 따라와서 작업을 멈췄어요"));
 			}
 		} else if (mode != Mode.NONE) {
 			chased = 0;
@@ -203,12 +203,12 @@ public final class Defense {
 		switch (m) {
 			case CREEPER -> {
 				Stats.creeperEscapes++;
-				status = "크리퍼를 피하는 중";
-				log("크리퍼가 가까워서 피했어요");
+				status = com.seolwoni.assistcore.i18n.Tr.t("크리퍼를 피하는 중");
+				log(com.seolwoni.assistcore.i18n.Tr.t("크리퍼가 가까워서 피했어요"));
 			}
 			case DODGE -> {
 				Stats.dodges++;
-				status = "화살을 피하는 중";
+				status = com.seolwoni.assistcore.i18n.Tr.t("화살을 피하는 중");
 				dodgeTicks = Human.rand(6, 9);
 				holdExtra = 0;
 				// Step across the arrow's line: sideways to its flight, on whichever side is free.
@@ -226,13 +226,13 @@ public final class Defense {
 			}
 			case FIGHT -> {
 				Stats.fights++;
-				status = "몹과 싸우는 중";
-				log("몹과 싸웠어요");
+				status = com.seolwoni.assistcore.i18n.Tr.t("몹과 싸우는 중");
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹과 싸웠어요"));
 			}
 			case FLEE -> {
 				Stats.flees++;
-				status = "몹을 피해 물러나는 중";
-				log("몹을 피해 물러났어요");
+				status = com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러나는 중");
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러났어요"));
 			}
 			default -> {
 			}
@@ -435,7 +435,7 @@ public final class Defense {
 		if (target == null || !target.isAlive() || target.distanceTo(p) > config.keepAway + 2) {
 			if (target != null && !target.isAlive()) {
 				Stats.kills++;
-				log("몹을 처치했어요");
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
 			}
 			target = null;
 			double best = Double.MAX_VALUE;
@@ -454,7 +454,7 @@ public final class Defense {
 			// closer without going over an edge): leave it be, unless it comes right up to us.
 			Stats.fightsGivenUp++;
 			Threats.ignore(p, target, 200);
-			log("닿지 않는 몹이라 싸우기를 그만뒀어요");
+			log(com.seolwoni.assistcore.i18n.Tr.t("닿지 않는 몹이라 싸우기를 그만뒀어요"));
 			target = null;
 			mc.options.keyUp.setDown(false);
 			mc.options.keyDown.setDown(false);

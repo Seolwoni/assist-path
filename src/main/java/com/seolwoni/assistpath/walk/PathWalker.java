@@ -95,7 +95,7 @@ public final class PathWalker {
 
 	private int fail(Minecraft mc, String why) {
 		AssistPath.Stats.gaveUp++;
-		com.seolwoni.assistcore.log.UsageLog.event("path", "길 찾기 포기: " + why + " → " + goal + (replans > 0 ? " (다시 계산 " + replans + "번)" : ""));
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
 		AssistPath.Stats.reasons.merge(why, 1, Integer::sum);
 		if (AssistPath.Stats.gaveUpGoals.size() < 12) AssistPath.Stats.gaveUpGoals.add(goal + " from " + feet(Minecraft.getInstance().player).toShortString());
 		Body.release(mc);
@@ -127,7 +127,7 @@ public final class PathWalker {
 
 	public int tick(Minecraft mc, LocalPlayer p) {
 		if (AssistPath.disabled) {
-			failReason = "Assist Path 꺼짐";
+			failReason = com.seolwoni.assistcore.i18n.Tr.t("Assist Path 꺼짐");
 			return Action.FAIL;
 		}
 		if (!counted) {
@@ -149,7 +149,7 @@ public final class PathWalker {
 			if (!plan.isDone()) {
 				// Planning: stand still for a moment, like someone looking where to go.
 				AssistPath.Stats.waitTicks++;
-				if (++planTicks > PLAN_WAIT_TICKS) return fail(mc, "길을 찾는 데 너무 오래 걸려요");
+				if (++planTicks > PLAN_WAIT_TICKS) return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 찾는 데 너무 오래 걸려요"));
 				return Action.RUN;
 			}
 			Route r = plan.getNow(null);
@@ -157,12 +157,12 @@ public final class PathWalker {
 			if (r == null) {
 				// Not found twice in a row: there is no way (no point in searching again and again).
 				if (++notFound < 2 && replan(mc)) return Action.RUN;
-				return fail(mc, "갈 수 있는 길이 없어요");
+				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
 			}
 			notFound = 0;
 			for (AssistPath.Step s : r.steps()) {
 				if ((!options.allowBreak() && !s.toBreak().isEmpty()) || (!options.allowPlace() && !s.toPlace().isEmpty())) {
-					return fail(mc, "길을 내야 갈 수 있는 곳이에요");
+					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 내야 갈 수 있는 곳이에요"));
 				}
 			}
 			if (r.steps().isEmpty()) {
@@ -171,7 +171,7 @@ public final class PathWalker {
 					walk = new RouteWalkAction(cells); // settle on the cell
 				} else {
 					if (replan(mc)) return Action.RUN;
-					return fail(mc, "갈 수 있는 길이 없어요");
+					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
 				}
 			} else {
 				cells = r.cells();
@@ -184,7 +184,7 @@ public final class PathWalker {
 			sinceCheck = 0;
 			if (!aheadOpen(mc)) {
 				if (replan(mc)) return Action.RUN;
-				return fail(mc, "길이 계속 막혀요");
+				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길이 계속 막혀요"));
 			}
 		}
 		AssistPath.Stats.walkTicks++;
@@ -203,11 +203,11 @@ public final class PathWalker {
 				return Action.RUN;
 			}
 			if (replan(mc)) return Action.RUN;
-			return fail(mc, "목적지까지 가지 못했어요");
+			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("목적지까지 가지 못했어요"));
 		}
 		if (r == Action.FAIL) {
 			if (replan(mc)) return Action.RUN;
-			return fail(mc, "길에서 자꾸 막혀요");
+			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길에서 자꾸 막혀요"));
 		}
 		return Action.RUN;
 	}
