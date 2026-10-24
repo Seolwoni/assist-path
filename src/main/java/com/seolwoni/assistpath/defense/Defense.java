@@ -86,6 +86,8 @@ public final class Defense {
 	private static Mode mode = Mode.NONE;
 	private static int modeTicks, calm, dodgeTicks, replan, lastHurt, chased, quiet;
 	private static String giveUp;
+	/** Building walls round us before giving up (see {@link WallIn}); null otherwise. */
+	private static WallIn wallIn;
 	private static boolean dodgeLeft, dodgeHold;
 	private static int holdExtra;
 	private static Vec3 dodgeDir;
@@ -121,6 +123,16 @@ public final class Defense {
 		if (!config.enabled || p == null || mc.level == null) return false;
 		if (mode == Mode.NONE && ++quiet > 20 * 30) chased = 0; // half a minute without trouble: start over
 		if (mode != Mode.NONE) quiet = 0;
+		if (wallIn != null) {
+			// Chased too long: wall ourselves in where we stand, then let the mod stop.
+			if (wallIn.tick(mc, p) == Action.RUN) return true;
+			Body.release(mc);
+			mc.options.keyShift.setDown(false);
+			giveUp = com.seolwoni.assistcore.i18n.Tr.t("몹이 계속 따라와요");
+			if (wallIn.placed > 0) log(com.seolwoni.assistcore.i18n.Tr.t("블록으로 몸을 막고 멈췄어요: ") + wallIn.placed);
+			wallIn = null;
+			return true;
+		}
 		if (p.hurtTime == 9 && lastHurt != 9) Stats.hitsTaken++;
 		lastHurt = p.hurtTime;
 		Stats.lowestHealth = Math.min(Stats.lowestHealth, p.getHealth());
@@ -137,8 +149,12 @@ public final class Defense {
 		// Being chased: count every tick while running away (the calm pauses in between too).
 		if (mode == Mode.FLEE || mode == Mode.CREEPER) {
 			if (++chased > 20 * 40 && giveUp == null) {
-				giveUp = com.seolwoni.assistcore.i18n.Tr.t("몹이 계속 따라와요");
 				log(com.seolwoni.assistcore.i18n.Tr.t("몹이 40초 넘게 따라와서 작업을 멈췄어요"));
+				// Not standing about in the open with the mob next to us: walls and a roof first (a few seconds).
+				end(mc);
+				mode = Mode.NONE;
+				wallIn = new WallIn(p);
+				return true;
 			}
 		} else if (mode != Mode.NONE) {
 			chased = 0;
@@ -270,6 +286,7 @@ public final class Defense {
 		if (mode != Mode.NONE && mc != null) end(mc);
 		mode = Mode.NONE;
 		giveUp = null;
+		wallIn = null;
 		chased = 0;
 	}
 
