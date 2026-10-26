@@ -146,11 +146,14 @@ public interface MovementHelper extends ActionCosts {
             return NO;
         }
         if (block instanceof DoorBlock || block instanceof FenceGateBlock) {
-            // TODO this assumes that all doors in all mods are openable
+            // Nothing here opens doors or gates on the way (Baritone did; that part is not in Assist Path): a closed
+            // one is a wall. (Build Assist, big pine: routes through its closed fence gates, the walk pressing into
+            // the gate for 12 seconds, again and again - 23 minutes in one spot.)
             if (block == Blocks.IRON_DOOR) {
                 return NO;
             }
-            return YES;
+            boolean open = block instanceof DoorBlock ? state.getValue(DoorBlock.OPEN) : state.getValue(FenceGateBlock.OPEN);
+            return open ? YES : NO;
         }
         if (block instanceof CarpetBlock) {
             return MAYBE;
