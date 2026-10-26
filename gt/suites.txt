@@ -1,0 +1,7 @@
+flat: skipped
+defense: skipped
+portable: skipped
+real-forest: skipped
+real-hills: skipped
+real-river: skipped
+real-village: skipped

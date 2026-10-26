@@ -1,0 +1,230 @@
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+		                                                                               ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+		                                                                                                                                                                    ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+		                                                                                                                                                                                                                              ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:130: error: package com.seolwoni.assistcore.i18n does not exist
+			failReason = com.seolwoni.assistcore.i18n.Tr.t("Assist Path 꺼짐");
+			                                         ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:152: error: package com.seolwoni.assistcore.i18n does not exist
+				if (++planTicks > PLAN_WAIT_TICKS) return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 찾는 데 너무 오래 걸려요"));
+				                                                                               ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:160: error: package com.seolwoni.assistcore.i18n does not exist
+				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
+				                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:165: error: package com.seolwoni.assistcore.i18n does not exist
+					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 내야 갈 수 있는 곳이에요"));
+					                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:174: error: package com.seolwoni.assistcore.i18n does not exist
+					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
+					                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:187: error: package com.seolwoni.assistcore.i18n does not exist
+				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길이 계속 막혀요"));
+				                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:206: error: package com.seolwoni.assistcore.i18n does not exist
+			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("목적지까지 가지 못했어요"));
+			                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:210: error: package com.seolwoni.assistcore.i18n does not exist
+			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길에서 자꾸 막혀요"));
+			                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:131: error: package com.seolwoni.assistcore.i18n does not exist
+			giveUp = com.seolwoni.assistcore.i18n.Tr.t("몹이 계속 따라와요");
+			                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:132: error: package com.seolwoni.assistcore.i18n does not exist
+			if (wallIn.placed > 0) log(com.seolwoni.assistcore.i18n.Tr.t("블록으로 몸을 막고 멈췄어요: ") + wallIn.placed);
+			                                                       ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:142: error: package com.seolwoni.assistcore.i18n does not exist
+			log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
+			                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:152: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹이 40초 넘게 따라와서 작업을 멈췄어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:222: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("크리퍼를 피하는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:223: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("크리퍼가 가까워서 피했어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:227: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("화살을 피하는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:245: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("몹과 싸우는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:246: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹과 싸웠어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:250: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러나는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:251: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러났어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:455: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:474: error: package com.seolwoni.assistcore.i18n does not exist
+			log(com.seolwoni.assistcore.i18n.Tr.t("닿지 않는 몹이라 싸우기를 그만뒀어요"));
+			                                ^
+Note: /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+24 errors
+
+--
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+  		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+  		                                                                               ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+  		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+  		                                                                                                                                                                    ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+  		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+  		                                                                                                                                                                                                                              ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:130: error: package com.seolwoni.assistcore.i18n does not exist
+  			failReason = com.seolwoni.assistcore.i18n.Tr.t("Assist Path 꺼짐");
+  			                                         ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:152: error: package com.seolwoni.assistcore.i18n does not exist
+  				if (++planTicks > PLAN_WAIT_TICKS) return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 찾는 데 너무 오래 걸려요"));
+  				                                                                               ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:160: error: package com.seolwoni.assistcore.i18n does not exist
+  				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
+  				                                            ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:165: error: package com.seolwoni.assistcore.i18n does not exist
+  					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 내야 갈 수 있는 곳이에요"));
+  					                                            ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:174: error: package com.seolwoni.assistcore.i18n does not exist
+  					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
+  					                                            ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:187: error: package com.seolwoni.assistcore.i18n does not exist
+  				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길이 계속 막혀요"));
+  				                                            ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:206: error: package com.seolwoni.assistcore.i18n does not exist
+  			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("목적지까지 가지 못했어요"));
+  			                                            ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:210: error: package com.seolwoni.assistcore.i18n does not exist
+  			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길에서 자꾸 막혀요"));
+  			                                            ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:131: error: package com.seolwoni.assistcore.i18n does not exist
+  			giveUp = com.seolwoni.assistcore.i18n.Tr.t("몹이 계속 따라와요");
+  			                                     ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:132: error: package com.seolwoni.assistcore.i18n does not exist
+  			if (wallIn.placed > 0) log(com.seolwoni.assistcore.i18n.Tr.t("블록으로 몸을 막고 멈췄어요: ") + wallIn.placed);
+  			                                                       ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:142: error: package com.seolwoni.assistcore.i18n does not exist
+  			log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
+  			                                ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:152: error: package com.seolwoni.assistcore.i18n does not exist
+  				log(com.seolwoni.assistcore.i18n.Tr.t("몹이 40초 넘게 따라와서 작업을 멈췄어요"));
+  				                                ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:222: error: package com.seolwoni.assistcore.i18n does not exist
+  				status = com.seolwoni.assistcore.i18n.Tr.t("크리퍼를 피하는 중");
+  				                                     ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:223: error: package com.seolwoni.assistcore.i18n does not exist
+  				log(com.seolwoni.assistcore.i18n.Tr.t("크리퍼가 가까워서 피했어요"));
+  				                                ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:227: error: package com.seolwoni.assistcore.i18n does not exist
+  				status = com.seolwoni.assistcore.i18n.Tr.t("화살을 피하는 중");
+  				                                     ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:245: error: package com.seolwoni.assistcore.i18n does not exist
+  				status = com.seolwoni.assistcore.i18n.Tr.t("몹과 싸우는 중");
+  				                                     ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:246: error: package com.seolwoni.assistcore.i18n does not exist
+  				log(com.seolwoni.assistcore.i18n.Tr.t("몹과 싸웠어요"));
+  				                                ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:250: error: package com.seolwoni.assistcore.i18n does not exist
+  				status = com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러나는 중");
+  				                                     ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:251: error: package com.seolwoni.assistcore.i18n does not exist
+  				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러났어요"));
+  				                                ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:455: error: package com.seolwoni.assistcore.i18n does not exist
+  				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
+  				                                ^
+  /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:474: error: package com.seolwoni.assistcore.i18n does not exist
+  			log(com.seolwoni.assistcore.i18n.Tr.t("닿지 않는 몹이라 싸우기를 그만뒀어요"));
+  			                                ^
+  24 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+--
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+		                                                                               ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+		                                                                                                                                                                    ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:98: error: package com.seolwoni.assistcore.i18n does not exist
+		com.seolwoni.assistcore.log.UsageLog.event("path", com.seolwoni.assistcore.i18n.Tr.t("길 찾기 포기: ") + why + " → " + goal + (replans > 0 ? com.seolwoni.assistcore.i18n.Tr.t(" (다시 계산 ") + replans + com.seolwoni.assistcore.i18n.Tr.t("번)") : ""));
+		                                                                                                                                                                                                                              ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:130: error: package com.seolwoni.assistcore.i18n does not exist
+			failReason = com.seolwoni.assistcore.i18n.Tr.t("Assist Path 꺼짐");
+			                                         ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:152: error: package com.seolwoni.assistcore.i18n does not exist
+				if (++planTicks > PLAN_WAIT_TICKS) return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 찾는 데 너무 오래 걸려요"));
+				                                                                               ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:160: error: package com.seolwoni.assistcore.i18n does not exist
+				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
+				                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:165: error: package com.seolwoni.assistcore.i18n does not exist
+					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길을 내야 갈 수 있는 곳이에요"));
+					                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:174: error: package com.seolwoni.assistcore.i18n does not exist
+					return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("갈 수 있는 길이 없어요"));
+					                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:187: error: package com.seolwoni.assistcore.i18n does not exist
+				return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길이 계속 막혀요"));
+				                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:206: error: package com.seolwoni.assistcore.i18n does not exist
+			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("목적지까지 가지 못했어요"));
+			                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/walk/PathWalker.java:210: error: package com.seolwoni.assistcore.i18n does not exist
+			return fail(mc, com.seolwoni.assistcore.i18n.Tr.t("길에서 자꾸 막혀요"));
+			                                            ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:131: error: package com.seolwoni.assistcore.i18n does not exist
+			giveUp = com.seolwoni.assistcore.i18n.Tr.t("몹이 계속 따라와요");
+			                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:132: error: package com.seolwoni.assistcore.i18n does not exist
+			if (wallIn.placed > 0) log(com.seolwoni.assistcore.i18n.Tr.t("블록으로 몸을 막고 멈췄어요: ") + wallIn.placed);
+			                                                       ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:142: error: package com.seolwoni.assistcore.i18n does not exist
+			log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
+			                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:152: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹이 40초 넘게 따라와서 작업을 멈췄어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:222: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("크리퍼를 피하는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:223: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("크리퍼가 가까워서 피했어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:227: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("화살을 피하는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:245: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("몹과 싸우는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:246: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹과 싸웠어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:250: error: package com.seolwoni.assistcore.i18n does not exist
+				status = com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러나는 중");
+				                                     ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:251: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 피해 물러났어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:455: error: package com.seolwoni.assistcore.i18n does not exist
+				log(com.seolwoni.assistcore.i18n.Tr.t("몹을 처치했어요"));
+				                                ^
+/home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java:474: error: package com.seolwoni.assistcore.i18n does not exist
+			log(com.seolwoni.assistcore.i18n.Tr.t("닿지 않는 몹이라 싸우기를 그만뒀어요"));
+			                                ^
+Note: /home/runner/work/assist-path/assist-path/src/main/java/com/seolwoni/assistpath/defense/Defense.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+24 errors
+	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:88)
